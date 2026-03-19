@@ -19,15 +19,15 @@ const tattooMaster = {
     id: 'anzhela',
     name: 'Anzhela Ilchyshyn',
     role: 'Właścicielka / Tatuaż & Manicure',
-    desc: 'Założycielka Foxy Studio. Perfekcjonistka, która łączy pasję do tatuażu z mistrzostwem w stylizacji paznokci. Jej prace to czysta sztuka, w którą wkłada całą swoją duszę.',
-    image: '/assets/team/anzhela.jpg'
+    desc: 'Założycielka Foxy Studio. Perfekcjonistka, która łączy pasję do tatuażu з mistrzostwem w stylizacji paznokci. Jej prace to czysta sztuka, w którą wkłada całą swoją duszę.',
+    image: '/assets/team/anzhela.webp'
 };
 
 const generateImages = (category: string, folder: string, count: number, prefix: string) => {
     return Array.from({ length: count }).map((_, i) => ({
         id: `${prefix}-${i + 1}`,
         category,
-        src: `/assets/gallery/${folder}/${i + 1}.jpg`
+        src: `/assets/gallery/${folder}/${i + 1}.webp`
     }));
 };
 const tattooImages = generateImages("Tatuaż artystyczny", "tatuaz", 17, "t");
@@ -56,7 +56,6 @@ export default function TattooPage() {
         if (lightboxIndex !== null) setLightboxIndex((lightboxIndex - 1 + tattooImages.length) % tattooImages.length);
     };
 
-    // Блокування скролу при відкритій модалці
     useEffect(() => {
         if (lightboxIndex !== null) {
             document.body.style.overflow = 'hidden';
@@ -122,10 +121,10 @@ export default function TattooPage() {
                                 <Image
                                     src={tattooMaster.image}
                                     alt={tattooMaster.name}
-                                    fill // Замість width/height використовуємо fill
-                                    className="object-cover" // Це важливо, щоб фото не сплющило
-                                    sizes="(max-width: 768px) 100vw, 50vw" // Підказка браузеру щодо розміру екрана
-                                    priority // Це фото майстра, вантажимо його першим!
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                    priority
                                 />
                             </div>
                         </div>
@@ -160,7 +159,6 @@ export default function TattooPage() {
                                     className="object-cover transition-transform duration-700 group-hover:scale-110"
                                     sizes="(max-width: 768px) 50vw, 25vw"
                                 />
-
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <span className="text-white font-bold tracking-widest uppercase text-xs">Powiększ</span>
                                 </div>
@@ -170,22 +168,20 @@ export default function TattooPage() {
                 </div>
             </section>
 
-            {/* 4. LIGHTBOX (Винесено за межі секцій для уникнення багів з z-index) */}
+            {/* 4. LIGHTBOX */}
             <AnimatePresence>
                 {lightboxIndex !== null && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        // Важливо: z-[100] і вище, щоб перекрити Хедер
                         className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
                         onClick={() => setLightboxIndex(null)}
                     >
-                        {/* Кнопка закриття */}
                         <button
                             className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]"
                             onClick={(e) => {
-                                e.stopPropagation(); // Зупиняємо подію, щоб не клікнути крізь кнопку
+                                e.stopPropagation();
                                 setLightboxIndex(null);
                             }}
                         >
@@ -194,21 +190,22 @@ export default function TattooPage() {
                             </svg>
                         </button>
 
-                        {/* Контент фото */}
                         <motion.div
                             key={lightboxIndex}
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="relative max-w-5xl w-full h-full flex items-center justify-center"
+                            className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <Image
                                 src={tattooImages[lightboxIndex].src}
-                                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                fill
+                                className="object-contain rounded-lg shadow-2xl"
                                 alt="Zoomed Tattoo"
+                                sizes="100vw"
+                                priority
                             />
 
-                            {/* Навігація */}
                             <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                             </button>

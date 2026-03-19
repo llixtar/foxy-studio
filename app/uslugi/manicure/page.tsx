@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-// --- ДАНІ ПРАЙСУ (Тягнемо з твоєї бази) ---
+// --- ДАНІ ПРАЙСУ ---
 const manicurePriceData = {
   category: "Manicure / Pedicure",
   items: [
@@ -28,23 +28,23 @@ const maniMasters = [
     name: 'Anzhela Ilchyshyn', 
     role: 'Właścicielka / Tatuaż & Manicure', 
     desc: 'Założycielka Foxy Studio. Perfekcjonistka, która przenosi swoją artystyczną precyzję z tatuażu na stylizację paznokci. Tworzy unikalne wzory, które zachwycają trwałością.', 
-    image: '/assets/team/anzhela.jpg' 
+    image: '/assets/team/anzhela.webp' 
   },
   { 
     id: 'wiktoria', 
     name: 'Wiktoria Nowak', 
     role: 'Stylizacja Paznokci', 
-    desc: 'Specjalistka od manicure sprzętowego i skomplikowanych zdobień. Jej prace charakteryzują się idealnym blaskiem i dbałością o każdy, nawet najmniejszy detal.', 
-    image: '/assets/team/wiktoria.jpg' 
+    desc: 'Specjalistka od manicure sprzętowego i skomplikowanych zdobień. Jej prace charakteryzują się idealnym blaskiem i dbałością o każdy, nawet найменший detal.', 
+    image: '/assets/team/wiktoria.webp' 
   },
 ];
 
-// --- ГАЛЕРЕЯ (19 фото манікюру) ---
+// --- ГАЛЕРЕЯ ---
 const generateImages = (category: string, folder: string, count: number, prefix: string) => {
   return Array.from({ length: count }).map((_, i) => ({
     id: `${prefix}-${i + 1}`,
     category,
-    src: `/assets/gallery/${folder}/${i + 1}.jpg`
+    src: `/assets/gallery/${folder}/${i + 1}.webp`
   }));
 };
 const maniImages = generateImages("Manicure/pedicure", "manicure", 19, "m");
@@ -135,7 +135,7 @@ export default function ManicurePage() {
         </div>
       </section>
 
-      {/* 2. МАЙСТРИ (Editorial змійка) */}
+      {/* 2. МАЙСТРИ */}
       <section className="px-4 mb-32 relative z-10">
         <div className="container mx-auto max-w-5xl">
           <div className="flex flex-col gap-20 md:gap-32">
@@ -149,7 +149,14 @@ export default function ManicurePage() {
               >
                 <div className="w-full md:w-1/2">
                   <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl">
-                    <Image src={master.image} alt={master.name} className="absolute inset-0 w-full h-full object-cover" />
+                    <Image 
+                      src={master.image} 
+                      alt={master.name} 
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      priority={idx === 0}
+                    />
                   </div>
                 </div>
                 <div className={`w-full md:w-1/2 text-center ${idx % 2 !== 0 ? 'md:text-right' : 'md:text-left'}`}>
@@ -169,16 +176,22 @@ export default function ManicurePage() {
           <h2 className="font-playfair text-4xl font-bold text-foxy-text">Portfolio <span className="italic">Paznokci</span></h2>
         </div>
         <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
-          {maniImages.map((Image: any, index: number) => {
+          {maniImages.map((img: any, index: number) => {
             const patterns = ["col-span-1 row-span-2", "col-span-1 row-span-1", "col-span-2 row-span-2", "col-span-1 row-span-1"];
             return (
               <motion.div
-                key={Image.id}
+                key={img.id}
                 layout
                 onClick={() => setLightboxIndex(index)}
                 className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}
               >
-                <Image src={Image.src} alt="Manicure" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <Image 
+                  src={img.src} 
+                  alt="Manicure work" 
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                    <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
                 </div>
@@ -198,21 +211,41 @@ export default function ManicurePage() {
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
             onClick={() => setLightboxIndex(null)}
           >
-            <button className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" onClick={() => setLightboxIndex(null)}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <button 
+              className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" 
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex(null);
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
             <motion.div 
               key={lightboxIndex}
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="relative max-w-5xl w-full h-full flex items-center justify-center"
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image src={maniImages[lightboxIndex].src} className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" alt="Mani Zoom" />
+              <Image 
+                src={maniImages[lightboxIndex].src} 
+                fill
+                className="object-contain rounded-lg shadow-2xl" 
+                alt="Mani Zoom" 
+                sizes="100vw"
+                priority
+              />
               <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
               </button>
               <button onClick={showNext} className="absolute right-0 md:-right-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
               </button>
             </motion.div>
           </motion.div>

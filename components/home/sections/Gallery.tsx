@@ -8,7 +8,7 @@ const generateImages = (category: string, folder: string, count: number, prefix:
   return Array.from({ length: count }).map((_, i) => ({
     id: `${prefix}-${i + 1}`,
     category,
-    src: `/assets/gallery/${folder}/${i + 1}.jpg`
+    src: `/assets/gallery/${folder}/${i + 1}.webp`
   }));
 };
 
@@ -34,7 +34,7 @@ export default function Gallery() {
 
   const filteredImages = activeCategory === "Wszystkie"
     ? galleryImages
-    : galleryImages.filter(Image => Image.category === activeCategory);
+    : galleryImages.filter(img => img.category === activeCategory);
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -62,7 +62,6 @@ export default function Gallery() {
   }, [lightboxIndex, filteredImages.length]);
 
   return (
-    // ПРИБРАНО relative, z-10 та overflow-hidden
     <section id="portfolio" className="bg-foxy-bg py-24 px-4">
       <div className="container mx-auto max-w-6xl">
 
@@ -102,11 +101,8 @@ export default function Gallery() {
           ))}
         </div>
 
-        {/* BENTO GRID СІТКА (Справжній хаос під контролем) */}
         <motion.div
           layout
-          // Задаємо жорстку висоту рядка: 180px на мобілці, 240px на десктопі
-          // grid-flow-row-dense - магія, яка заповнює "дірки" в сітці меншими фотками
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[180px] md:auto-rows-[240px] grid-flow-row-dense"
         >
           <AnimatePresence mode="popLayout">
@@ -121,14 +117,13 @@ export default function Gallery() {
                 onClick={() => setLightboxIndex(index)}
                 className={`relative group cursor-pointer overflow-hidden rounded-2xl bg-black/5 ${patterns[index % patterns.length]}`}
               >
-                {/* 2. Використовуємо велику Image як компонент, а маленьку img для даних */}
                 <Image
                   src={img.src}
                   alt={img.category}
                   fill
                   loading="lazy"
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(max-width: 768px) 50vw, 33vw"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                 />
 
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -172,13 +167,16 @@ export default function Gallery() {
                 else if (offset.x < -50) showNext();
               }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-4xl max-h-[90vh] px-4 flex justify-center items-center cursor-grab active:cursor-grabbing"
+              className="relative w-full max-w-4xl h-[70vh] md:h-[85vh] px-4 flex justify-center items-center cursor-grab active:cursor-grabbing"
             >
               <Image
                 src={filteredImages[lightboxIndex].src}
                 alt="Zoomed"
-                className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl select-none"
+                fill
+                className="object-contain rounded-xl shadow-2xl select-none"
                 draggable={false}
+                sizes="100vw"
+                priority
               />
               <div className="absolute bottom-[-40px] text-center w-full text-white/70 font-lato text-sm">
                 {filteredImages[lightboxIndex].category} • {lightboxIndex + 1} / {filteredImages.length}

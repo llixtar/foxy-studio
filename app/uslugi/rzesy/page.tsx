@@ -21,8 +21,8 @@ const master = {
   id: 'julia', 
   name: 'Julia Kowalska', 
   role: 'Ekspertka Przedłużania Rzęs', 
-  desc: 'Ekspertka od przedłużania rzęs na każdym poziomie: od subtelnej klasyki po spektakularne mega volume. Precyzja i indywidualne podejście Julii sprawiają, że każda stylizacja tworzy hipnotyzujące i głębokie spojrzenie.', 
-  image: '/assets/team/julia.jpg' 
+  desc: 'Ekspertka od przedłużania rzęs na każdym poziomie: od subtelnej klasyki po spektakularne mega volume. Precyzja i indywidualне podejście Julii sprawiają, że każda stylizacja tworzy hipnotyzujące i głębokie spojrzenie.', 
+  image: '/assets/team/julia.webp' 
 };
 
 // --- ГАЛЕРЕЯ (5 фото вій) ---
@@ -30,7 +30,7 @@ const generateImages = (category: string, folder: string, count: number, prefix:
   return Array.from({ length: count }).map((_, i) => ({
     id: `${prefix}-${i + 1}`,
     category,
-    src: `/assets/gallery/${folder}/${i + 1}.jpg`
+    src: `/assets/gallery/${folder}/${i + 1}.webp`
   }));
 };
 const lashImages = generateImages("Przedłużanie rzęs", "rzesy", 5, "r");
@@ -127,7 +127,14 @@ export default function LashesPage() {
           >
             <div className="w-full md:w-1/2">
               <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl">
-                <Image src={master.image} alt={master.name} className="absolute inset-0 w-full h-full object-cover" />
+                <Image 
+                  src={master.image} 
+                  alt={master.name} 
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                />
               </div>
             </div>
             <div className="w-full md:w-1/2 text-center md:text-left">
@@ -147,16 +154,22 @@ export default function LashesPage() {
           <h2 className="font-playfair text-4xl font-bold text-foxy-text tracking-tight">Nasze <span className="italic font-normal">Stylizacje</span></h2>
         </div>
         <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
-          {lashImages.map((Image: any, index: number) => {
+          {lashImages.map((img: any, index: number) => {
             const patterns = ["col-span-1 row-span-1", "col-span-1 row-span-2", "col-span-2 row-span-1"];
             return (
               <motion.div
-                key={Image.id}
+                key={img.id}
                 layout
                 onClick={() => setLightboxIndex(index)}
                 className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}
               >
-                <Image src={Image.src} alt="Lashes" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <Image 
+                  src={img.src} 
+                  alt="Lashes" 
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                    <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
                 </div>
@@ -176,16 +189,30 @@ export default function LashesPage() {
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
             onClick={() => setLightboxIndex(null)}
           >
-            <button className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" onClick={() => setLightboxIndex(null)}>
+            <button 
+              className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" 
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex(null);
+              }}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <motion.div 
               key={lightboxIndex}
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="relative max-w-5xl w-full h-full flex items-center justify-center"
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image src={lashImages[lightboxIndex].src} className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" alt="Lash Zoom" />
+              <Image 
+                src={lashImages[lightboxIndex].src} 
+                fill
+                className="object-contain rounded-lg shadow-2xl" 
+                alt="Lash Zoom" 
+                sizes="100vw"
+                priority
+              />
               <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
               </button>

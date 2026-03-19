@@ -63,7 +63,7 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-100 transition-all duration-500 ${
         isPastHero
           ? 'bg-foxy-bg/95 backdrop-blur-md shadow-sm py-4' 
           : 'bg-transparent py-6'
@@ -142,7 +142,7 @@ export default function Header() {
 
       {/* МОБІЛЬНЕ МЕНЮ */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-foxy-bg/98 backdrop-blur-2xl md:hidden overflow-y-auto">
+        <div className="fixed inset-0 z-[110] flex flex-col bg-foxy-bg/98 backdrop-blur-2xl md:hidden overflow-y-auto">
           <div className="flex h-20 items-center justify-between px-6 border-b border-foxy-text/5 shrink-0">
             <Link href="/" onClick={closeMenu}>
               <img

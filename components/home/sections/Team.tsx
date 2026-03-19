@@ -8,35 +8,35 @@ const teamData = [
     name: 'Anzhela Ilchyshyn', 
     role: 'Właścicielka / Tatuaż & Manicure', 
     desc: 'Założycielka Foxy Studio. Perfekcjonistka, która łączy pasję do tatuażu z mistrzostwem w stylizacji paznokci. Jej prace to czysta sztuka, w którą wkłada całą swoją duszę.', 
-    image: '/assets/team/anzhela.jpg' 
+    image: '/assets/team/anzhela.webp' 
   },
   { 
     id: 'tetiana', 
     name: 'Tetiana Lysenko', 
     role: 'Stylizacja brwi i rzęs', 
     desc: 'Mistrzyni idealnej geometrii i laminacji. Zrobi z Twoimi brwiami i rzęsami prawdziwą magię, podkreślając naturalne piękno.', 
-    image: '/assets/team/tetiana.jpg' 
+    image: '/assets/team/tetiana.webp' 
   },
   { 
     id: 'wiktoria', 
     name: 'Wiktoria Nowak', 
     role: 'Manicure / Pedicure', 
     desc: 'Specjalistka od manicure sprzętowego i designu. Jej stylizacje to idealny blask i trwałość, która utrzymuje się przez wiele tygodni.', 
-    image: '/assets/team/wiktoria.jpg' 
+    image: '/assets/team/wiktoria.webp' 
   },
   { 
     id: 'julia', 
     name: 'Julia Kowalska', 
     role: 'Przedłużanie rzęs', 
     desc: 'Ekspertka od przedłużania rzęs na każdym poziomie: od klasyki po mega volume. Tworzy hipnotyzujące spojrzenie.', 
-    image: '/assets/team/julia.jpg' 
+    image: '/assets/team/julia.webp' 
   },
   { 
     id: 'klaudia', 
     name: 'Klaudia Wiśniewska', 
     role: 'Tatuaż artystyczny', 
     desc: 'Artystka z unikalnym stylem. Specjalizuje się w cienkich liniach, motywach florystycznych i delikatnych, kobiecych mikrotatuażach.', 
-    image: '/assets/team/klaudia.jpg' 
+    image: '/assets/team/klaudia.webp' 
   },
 ];
 
