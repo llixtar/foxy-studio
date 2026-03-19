@@ -42,12 +42,12 @@ const teamData = [
 
 const [boss, ...staff] = teamData;
 
-const containerVariants = {
+const containerVariants: any = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.15 } }
 };
 
-const itemVariants = {
+const itemVariants: any = {
   hidden: { opacity: 0, y: 40 },
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
 };
@@ -104,7 +104,7 @@ export default function Team() {
 
           {/* КОМАНДА (Чиста сітка) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-            {staff.map((member) => (
+            {staff.map((member: any) => (
               <motion.div key={member.id} variants={itemVariants} className="flex flex-col group">
                 {/* Фото */}
                 <div className="relative aspect-[3/4] overflow-hidden rounded-xl shadow-md mb-5">

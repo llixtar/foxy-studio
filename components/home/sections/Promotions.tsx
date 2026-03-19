@@ -30,7 +30,7 @@ export default function Promotions() {
     return () => clearInterval(interval);
   }, [slideNext, isHovered]);
 
-  const variants = {
+  const variants: any = {
     enter: (direction: number) => ({
       x: direction > 0 ? '20%' : '-20%',
       opacity: 0,

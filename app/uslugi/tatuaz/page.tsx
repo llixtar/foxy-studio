@@ -136,7 +136,7 @@ export default function TattooPage() {
           <h2 className="font-playfair text-4xl font-bold text-foxy-text">Moje <span className="italic">Prace</span></h2>
         </div>
         <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
-          {tattooImages.map((img, index) => {
+          {tattooImages.map((img: any, index: number) => {
             const patterns = ["col-span-1 row-span-2", "col-span-1 row-span-1", "col-span-2 row-span-2", "col-span-1 row-span-1"];
             return (
               <motion.div

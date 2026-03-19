@@ -118,7 +118,7 @@ export default function Header() {
                   </div>
                 </div>
               ) : (
-                <Link key={item.title} href={item.url} className="relative group py-4">
+                <Link key={item.title} href={item.url || "#"} className="relative group py-4">
                   <span>{item.title}</span>
                   <span className="absolute bottom-2 left-0 w-0 h-0.5 bg-foxy-accent transition-all duration-300 group-hover:w-full"></span>
                 </Link>
@@ -190,7 +190,7 @@ export default function Header() {
               ) : (
                 <Link
                   key={item.title}
-                  href={item.url}
+                  href={item.url || "#"}
                   onClick={closeMenu}
                   className="hover:text-foxy-accent transition-colors"
                 >
