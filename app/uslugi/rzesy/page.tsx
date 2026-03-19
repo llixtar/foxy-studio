@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 // --- ДАНІ ПРАЙСУ ---
 const lashesPriceData = {
@@ -126,7 +127,7 @@ export default function LashesPage() {
           >
             <div className="w-full md:w-1/2">
               <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl">
-                <img src={master.image} alt={master.name} className="absolute inset-0 w-full h-full object-cover" />
+                <Image src={master.image} alt={master.name} className="absolute inset-0 w-full h-full object-cover" />
               </div>
             </div>
             <div className="w-full md:w-1/2 text-center md:text-left">
@@ -146,16 +147,16 @@ export default function LashesPage() {
           <h2 className="font-playfair text-4xl font-bold text-foxy-text tracking-tight">Nasze <span className="italic font-normal">Stylizacje</span></h2>
         </div>
         <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
-          {lashImages.map((img: any, index: number) => {
+          {lashImages.map((Image: any, index: number) => {
             const patterns = ["col-span-1 row-span-1", "col-span-1 row-span-2", "col-span-2 row-span-1"];
             return (
               <motion.div
-                key={img.id}
+                key={Image.id}
                 layout
                 onClick={() => setLightboxIndex(index)}
                 className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}
               >
-                <img src={img.src} alt="Lashes" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <Image src={Image.src} alt="Lashes" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                    <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
                 </div>
@@ -184,7 +185,7 @@ export default function LashesPage() {
               className="relative max-w-5xl w-full h-full flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <img src={lashImages[lightboxIndex].src} className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" alt="Lash Zoom" />
+              <Image src={lashImages[lightboxIndex].src} className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" alt="Lash Zoom" />
               <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
               </button>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 const generateImages = (category: string, folder: string, count: number, prefix: string) => {
   return Array.from({ length: count }).map((_, i) => ({
@@ -24,9 +25,16 @@ export default function Gallery() {
   const [activeCategory, setActiveCategory] = useState("Wszystkie");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const filteredImages = activeCategory === "Wszystkie" 
-    ? galleryImages 
-    : galleryImages.filter(img => img.category === activeCategory);
+  const patterns = [
+    "col-span-1 row-span-2",
+    "col-span-1 row-span-1",
+    "col-span-2 row-span-2",
+    "col-span-1 row-span-1"
+  ];
+
+  const filteredImages = activeCategory === "Wszystkie"
+    ? galleryImages
+    : galleryImages.filter(Image => Image.category === activeCategory);
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -57,8 +65,8 @@ export default function Gallery() {
     // ПРИБРАНО relative, z-10 та overflow-hidden
     <section id="portfolio" className="bg-foxy-bg py-24 px-4">
       <div className="container mx-auto max-w-6xl">
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -84,7 +92,7 @@ export default function Gallery() {
             >
               {cat}
               {activeCategory === cat && (
-                <motion.div 
+                <motion.div
                   layoutId="activeCategoryDot"
                   className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-foxy-accent"
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -94,62 +102,40 @@ export default function Gallery() {
           ))}
         </div>
 
-      {/* BENTO GRID СІТКА (Справжній хаос під контролем) */}
-        <motion.div 
+        {/* BENTO GRID СІТКА (Справжній хаос під контролем) */}
+        <motion.div
           layout
           // Задаємо жорстку висоту рядка: 180px на мобілці, 240px на десктопі
           // grid-flow-row-dense - магія, яка заповнює "дірки" в сітці меншими фотками
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[180px] md:auto-rows-[240px] grid-flow-row-dense"
         >
           <AnimatePresence mode="popLayout">
-            {filteredImages.map((img, index) => {
-              // 4 види плиток:
-              // col-span-1 row-span-2 (Найвища - займає 2 рядки у висоту)
-              // col-span-2 row-span-1 (Половинка - широка горизонтальна)
-              // col-span-1 row-span-1 (Третинка - стандартний квадрат)
-              // col-span-2 row-span-2 (Гігантський акцент - подвійна і вшир, і ввись)
-              
-              const bentoPatterns = [
-                "col-span-1 row-span-2", // Найвища
-                "col-span-1 row-span-1", // Третинка
-                "col-span-1 row-span-1", // Третинка
-                "col-span-2 row-span-1", // Половинка
-                "col-span-1 row-span-1", // Третинка
-                "col-span-2 row-span-2", // Гігантська (Акцентна)
-                "col-span-1 row-span-1", // Третинка
-                "col-span-1 row-span-2", // Найвища
-              ];
-              
-              const patternClass = bentoPatterns[index % bentoPatterns.length];
+            {filteredImages.map((img: any, index: number) => (
+              <motion.div
+                key={img.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => setLightboxIndex(index)}
+                className={`relative group cursor-pointer overflow-hidden rounded-2xl bg-black/5 ${patterns[index % patterns.length]}`}
+              >
+                {/* 2. Використовуємо велику Image як компонент, а маленьку img для даних */}
+                <Image
+                  src={img.src}
+                  alt={img.category}
+                  fill
+                  loading="lazy"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                />
 
-              return (
-                <motion.div
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.4 }}
-                  key={img.id}
-                  onClick={() => setLightboxIndex(index)}
-                  // Додаємо patternClass до картки
-                  className={`relative group cursor-pointer overflow-hidden rounded-2xl bg-black/5 ${patternClass}`}
-                >
-                  {/* Картинка тепер ідеально розтягується і заповнює будь-яку з 4 форм клітинок */}
-                  <img 
-                    src={img.src} 
-                    alt={img.category} 
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  {/* Оверлей при наведенні */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <span className="text-white font-playfair font-bold tracking-wider text-sm md:text-base opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                      Powiększ
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            })}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
+                </div>
+              </motion.div>
+            ))}
           </AnimatePresence>
         </motion.div>
 
@@ -164,7 +150,7 @@ export default function Gallery() {
             className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center"
             onClick={() => setLightboxIndex(null)}
           >
-            <button 
+            <button
               className="absolute top-6 right-6 z-[10000] text-white/50 hover:text-white transition-colors p-2"
               onClick={() => setLightboxIndex(null)}
             >
@@ -173,7 +159,7 @@ export default function Gallery() {
               </svg>
             </button>
 
-            <motion.div 
+            <motion.div
               key={lightboxIndex}
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -188,9 +174,9 @@ export default function Gallery() {
               onClick={(e) => e.stopPropagation()}
               className="relative w-full max-w-4xl max-h-[90vh] px-4 flex justify-center items-center cursor-grab active:cursor-grabbing"
             >
-              <img 
-                src={filteredImages[lightboxIndex].src} 
-                alt="Zoomed" 
+              <Image
+                src={filteredImages[lightboxIndex].src}
+                alt="Zoomed"
                 className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl select-none"
                 draggable={false}
               />
@@ -199,7 +185,7 @@ export default function Gallery() {
               </div>
             </motion.div>
 
-            <button 
+            <button
               onClick={showPrev}
               className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4"
             >
@@ -207,7 +193,7 @@ export default function Gallery() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
-            <button 
+            <button
               onClick={showNext}
               className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4"
             >
