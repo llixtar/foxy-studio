@@ -59,7 +59,7 @@ const priceData = [
   }
 ];
 
-const gridVariants = {
+const gridVariants: any = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -69,7 +69,7 @@ const gridVariants = {
   }
 };
 
-const categoryVariants = {
+const categoryVariants: any = {
   hidden: { opacity: 0, y: 40 },
   show: { 
     opacity: 1, 
@@ -82,7 +82,7 @@ const categoryVariants = {
   }
 };
 
-const rowVariants = {
+const rowVariants: any = {
   hidden: { opacity: 0, x: -20 },
   show: { 
     opacity: 1, 

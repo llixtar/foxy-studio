@@ -49,12 +49,12 @@ const generateImages = (category: string, folder: string, count: number, prefix:
 const maniImages = generateImages("Manicure/pedicure", "manicure", 19, "m");
 
 // --- АНІМАЦІЇ ---
-const categoryVariants = {
+const categoryVariants: any = {
   hidden: { opacity: 0, y: 40 },
   show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1], staggerChildren: 0.1 } }
 };
 
-const rowVariants = {
+const rowVariants: any = {
   hidden: { opacity: 0, x: -20 },
   show: { opacity: 1, x: 0, transition: { duration: 0.5 } }
 };
