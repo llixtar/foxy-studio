@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation'; // Імпортуємо хук для визначення сторінки
+import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Налаштовуємо масив навігації
 const navItems = [
   {
     title: 'Usługi',
@@ -27,17 +27,27 @@ export default function Header() {
   const [isPastHero, setIsPastHero] = useState(false);
   const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
 
-  const pathname = usePathname(); // Отримуємо поточний шлях
-  const isHomePage = pathname === '/'; // Перевіряємо, чи ми на головній
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
 
+  // 1. ЛОГІКА БЛОКУВАННЯ СКРОЛУ
   useEffect(() => {
-    // Якщо ми НЕ на головній — хедер завжди має бути видимим (isPastHero = true)
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    // Чистимо при розмонтуванні компонента
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isMenuOpen]);
+
+  // 2. ЛОГІКА СКРОЛУ ХЕДЕРА
+  useEffect(() => {
     if (!isHomePage) {
       setIsPastHero(true);
       return;
     }
 
-    // Якщо ми на головній — вмикаємо логіку скролу
     const handleScroll = () => {
       if (window.scrollY >= window.innerHeight - 80) {
         setIsPastHero(true);
@@ -46,10 +56,10 @@ export default function Header() {
       }
     };
 
-    handleScroll(); // Перевіряємо позицію одразу при завантаженні
+    handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isHomePage]); // Перезапускаємо ефект при зміні сторінки
+  }, [isHomePage]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -63,7 +73,7 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-100 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
         isPastHero
           ? 'bg-foxy-bg/95 backdrop-blur-md shadow-sm py-4' 
           : 'bg-transparent py-6'
@@ -77,10 +87,10 @@ export default function Header() {
             className="flex items-center transition-transform hover:scale-105"
             onClick={closeMenu}
           >
+            {/* Використовуй Image з next/image для оптимізації, коли буде час */}
             <img
               src="/assets/FOXY.svg"
               alt="Foxy Studio Logo"
-              // Зберігаємо твої розміри h-20 / md:h-30
               className={`h-20 md:h-30 w-auto transition-all duration-500 ${
                 !isPastHero
                   ? 'invert brightness-0 drop-shadow-[0_0_0.5px_rgba(255,255,255,1)]'
@@ -126,9 +136,9 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* БУРГЕР-КНОПКА */}
+          {/* БУРГЕР-КНОПКА — ТУТ ТЕПЕР z-[101] ТА relative */}
           <button
-            className={`md:hidden p-2 transition-colors hover:text-foxy-accent ${
+            className={`md:hidden p-2 relative z-[101] transition-colors hover:text-foxy-accent ${
               isPastHero ? 'text-foxy-text' : 'text-white'
             }`}
             onClick={toggleMenu}
@@ -140,67 +150,72 @@ export default function Header() {
         </div>
       </div>
 
-      {/* МОБІЛЬНЕ МЕНЮ */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-foxy-bg/98 backdrop-blur-2xl md:hidden overflow-y-auto">
-          <div className="flex h-20 items-center justify-between px-6 border-b border-foxy-text/5 shrink-0">
-            <Link href="/" onClick={closeMenu}>
-              <img
-                src="/assets/FOXY.svg"
-                alt="Foxy Studio Logo"
-                className="h-20 w-auto drop-shadow-[0_0_0.5px_rgba(0,0,0,1)]"
-              />
-            </Link>
-            <button onClick={toggleMenu} className="p-2 text-foxy-text hover:text-foxy-accent transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-9 h-9">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+      {/* МОБІЛЬНЕ МЕНЮ — ПЕРЕВІР z-[110] */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[110] flex flex-col bg-foxy-bg/98 backdrop-blur-2xl md:hidden overflow-y-auto"
+          >
+            {/* Контент меню такий самий, як у тебе був */}
+            <div className="flex h-20 items-center justify-between px-6 border-b border-foxy-text/5 shrink-0">
+              <Link href="/" onClick={closeMenu}>
+                <img src="/assets/FOXY.svg" alt="Logo" className="h-20 w-auto" />
+              </Link>
+              <button onClick={toggleMenu} className="p-2 text-foxy-text hover:text-foxy-accent transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-9 h-9">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-          <nav className="flex flex-col items-center justify-center gap-8 text-2xl font-bold uppercase tracking-widest text-foxy-text py-12">
-            {navItems.map((item) => (
-              item.type === 'dropdown' ? (
-                <div key={item.title} className="flex flex-col items-center w-full">
-                  <button
-                    onClick={() => setIsMobileServicesOpen(!isMobileServicesOpen)}
-                    className="flex items-center gap-2 hover:text-foxy-accent transition-colors"
+            <nav className="flex flex-col items-center justify-center gap-8 text-2xl font-bold uppercase tracking-widest text-foxy-text py-12">
+              {navItems.map((item) => (
+                item.type === 'dropdown' ? (
+                  <div key={item.title} className="flex flex-col items-center w-full">
+                    <button
+                      onClick={() => setIsMobileServicesOpen(!isMobileServicesOpen)}
+                      className="flex items-center gap-2 hover:text-foxy-accent transition-colors"
+                    >
+                      {item.title}
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className={`w-5 h-5 transition-transform duration-300 ${isMobileServicesOpen ? 'rotate-180 text-foxy-accent' : ''}`}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </button>
+
+                    <div className={`flex flex-col items-center gap-5 overflow-hidden transition-all duration-300 ${
+                      isMobileServicesOpen ? 'max-h-96 mt-6 opacity-100' : 'max-h-0 mt-0 opacity-0'
+                    }`}>
+                      {item.items?.map((subItem) => (
+                        <Link
+                          key={subItem.name}
+                          href={subItem.url}
+                          onClick={closeMenu}
+                          className="text-base text-foxy-text/70 hover:text-foxy-accent font-semibold tracking-wider transition-colors"
+                        >
+                          {subItem.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    key={item.title}
+                    href={item.url || "#"}
+                    onClick={closeMenu}
+                    className="hover:text-foxy-accent transition-colors"
                   >
                     {item.title}
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className={`w-5 h-5 transition-transform duration-300 ${isMobileServicesOpen ? 'rotate-180 text-foxy-accent' : ''}`}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </button>
-
-                  <div className={`flex flex-col items-center gap-5 overflow-hidden transition-all duration-300 ${
-                    isMobileServicesOpen ? 'max-h-96 mt-6 opacity-100' : 'max-h-0 mt-0 opacity-0'
-                  }`}>
-                    {item.items?.map((subItem) => (
-                      <Link
-                        key={subItem.name}
-                        href={subItem.url}
-                        onClick={closeMenu}
-                        className="text-base text-foxy-text/70 hover:text-foxy-accent font-semibold tracking-wider transition-colors"
-                      >
-                        {subItem.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  key={item.title}
-                  href={item.url || "#"}
-                  onClick={closeMenu}
-                  className="hover:text-foxy-accent transition-colors"
-                >
-                  {item.title}
-                </Link>
-              )
-            ))}
-          </nav>
-        </div>
-      )}
+                  </Link>
+                )
+              ))}
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
