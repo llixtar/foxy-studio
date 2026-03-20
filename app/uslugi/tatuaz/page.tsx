@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-// --- ДАНІ ---
+// --- ДАНІ З ПРИВ'ЯЗКОЮ ДО БАЗИ МОДАЛКИ ---
 const tattooPriceData = {
     category: "Tatuaż artystyczny",
     items: [
-        { name: "Konsultacja", price: "Darmowa" },
-        { name: "Tatuaż minimalistyczny 5-7cm", price: "200 zł" },
-        { name: "Tatuaż średni 10-20cm", price: "350 zł+" },
-        { name: "Tatuaż od 25cm", price: "600 zł+" },
+        { name: "Konsultacja", price: "Darmowa", catId: 'tatuaz', srvId: 't1' },
+        { name: "Tatuaż minimalistyczny 5-7cm", price: "200 zł", catId: 'tatuaz', srvId: 't2' },
+        { name: "Tatuaż średni 10-20cm", price: "350 zł+", catId: 'tatuaz', srvId: 't3' },
+        { name: "Tatuaż od 25cm", price: "600 zł+", catId: 'tatuaz', srvId: 't4' },
     ]
 };
 
@@ -45,6 +45,19 @@ const rowVariants: any = {
 
 export default function TattooPage() {
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+    // МАГІЯ ВИКЛИКУ МОДАЛКИ (Deep Linking)
+    const handleBooking = (catId: string, srvId: string) => {
+        // Відкриваємо модалку
+        window.dispatchEvent(new CustomEvent('openModalGlobal'));
+        
+        // Передаємо дані послуги
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('prefillBooking', { 
+                detail: { catId, srvId } 
+            }));
+        }, 50);
+    };
 
     const showNext = (e?: React.MouseEvent) => {
         e?.stopPropagation();
@@ -99,12 +112,17 @@ export default function TattooPage() {
                         animate="show"
                         className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl"
                     >
-                        <div className="flex flex-col space-y-6">
+                        <div className="flex flex-col space-y-4">
                             {tattooPriceData.items.map((item, idx) => (
-                                <motion.div key={idx} variants={rowVariants} className="flex justify-between items-baseline group">
+                                <motion.div 
+                                    key={idx} 
+                                    variants={rowVariants} 
+                                    onClick={() => handleBooking(item.catId, item.srvId)}
+                                    className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
+                                >
                                     <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors pr-4">{item.name}</span>
-                                    <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px]"></div>
-                                    <span className="text-white font-bold text-base md:text-lg pl-4">{item.price}</span>
+                                    <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                                    <span className="text-white font-bold text-base md:text-lg pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
                                 </motion.div>
                             ))}
                         </div>

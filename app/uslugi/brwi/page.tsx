@@ -4,24 +4,24 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-// --- ДАНІ ПРАЙСУ ---
+// --- ДАНІ ПРАЙСУ З ПРИВ'ЯЗКОЮ ДО МОДАЛКИ ---
 const browsLashesPriceData = [
   {
     category: "Stylizacja brwi",
     items: [
-      { name: "Regulacja woskiem/pęsetą", price: "50 zł" },
-      { name: "Laminacja brwi", price: "80 zł" },
-      { name: "Koloryzacja brwi z regulacją i geometrią", price: "90 zł" },
-      { name: "Rozjaśnienie brwi + Koloryzacja + Regulacja", price: "100 zł" },
-      { name: "Laminacja brwi + regulacja + farbka", price: "120 zł" },
+      { name: "Regulacja woskiem/pęsetą", price: "50 zł", catId: 'brwi', srvId: 'b1' },
+      { name: "Laminacja brwi", price: "80 zł", catId: 'brwi', srvId: 'b2' },
+      { name: "Koloryzacja brwi z regulacją i geometrią", price: "90 zł", catId: 'brwi', srvId: 'b3' },
+      { name: "Rozjaśnienie brwi + Koloryzacja + Regulacja", price: "100 zł", catId: 'brwi', srvId: 'b4' },
+      { name: "Laminacja brwi + regulacja + farbka", price: "120 zł", catId: 'brwi', srvId: 'b5' },
     ]
   },
   {
     category: "Stylizacja rzęs",
     items: [
-      { name: "Koloryzacja rzęs", price: "50 zł" },
-      { name: "Laminacja rzęs z koloryzacją", price: "120 zł" },
-      { name: "Laminacja rzęs z koloryzacją + regeneracja botoksem", price: "140 zł" },
+      { name: "Koloryzacja rzęs", price: "50 zł", catId: 'rzesy_lami', srvId: 'rl1' },
+      { name: "Laminacja rzęs z koloryzacją", price: "120 zł", catId: 'rzesy_lami', srvId: 'rl2' },
+      { name: "Laminacja rzęs z koloryzacją + regeneracja botoksem", price: "140 zł", catId: 'rzesy_lami', srvId: 'rl3' },
     ],
     promocja: "LAMINACJA BRWI + LAMINACJA RZĘS = 200 zł"
   }
@@ -63,6 +63,16 @@ const rowVariants: any = {
 
 export default function BrowsPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // --- МАГІЯ ВИКЛИКУ МОДАЛКИ ---
+  const handleBooking = (catId: string, srvId: string) => {
+    window.dispatchEvent(new CustomEvent('openModalGlobal'));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('prefillBooking', { 
+        detail: { catId, srvId } 
+      }));
+    }, 50);
+  };
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -123,18 +133,23 @@ export default function BrowsPage() {
                 <h3 className="font-playfair text-2xl font-bold text-white mb-8 border-b border-foxy-accent/30 pb-2">
                   {section.category}
                 </h3>
-                <div className="flex flex-col space-y-6">
+                <div className="flex flex-col space-y-4">
                   {section.items.map((item, itemIdx) => (
-                    <motion.div key={itemIdx} variants={rowVariants} className="flex justify-between items-baseline group">
+                    <motion.div 
+                      key={itemIdx} 
+                      variants={rowVariants} 
+                      onClick={() => handleBooking(item.catId, item.srvId)}
+                      className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
+                    >
                       <span className="text-white/90 font-medium text-sm md:text-base group-hover:text-foxy-accent transition-colors pr-4">{item.name}</span>
-                      <div className="flex-grow border-b border-dotted border-white/20 relative top-[-4px]"></div>
-                      <span className="text-white font-bold text-sm md:text-base pl-4">{item.price}</span>
+                      <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                      <span className="text-white font-bold text-sm md:text-base pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
                     </motion.div>
                   ))}
                 </div>
 
                 {section.promocja && (
-                  <motion.div variants={rowVariants} className="mt-8 p-4 rounded-xl bg-foxy-accent/10 border border-foxy-accent/30 text-center">
+                  <motion.div variants={rowVariants} className="mt-8 p-4 rounded-xl bg-foxy-accent/10 border border-foxy-accent/30 text-center shadow-sm">
                     <p className="text-foxy-accent font-bold tracking-widest uppercase text-[10px] mb-1">Combo Promocja</p>
                     <p className="text-white font-bold text-sm">{section.promocja}</p>
                   </motion.div>

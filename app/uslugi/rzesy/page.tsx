@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-// --- ДАНІ ПРАЙСУ ---
+// --- ДАНІ ПРАЙСУ З ПРИВ'ЯЗКОЮ ДО МОДАЛКИ ---
 const lashesPriceData = {
   category: "Przedłużanie rzęs",
   items: [
-    { name: "Ściągnięcie rzęs", price: "40 zł" },
-    { name: "Założenie rzęs 1-2D", price: "130 zł" },
-    { name: "Założenie rzęs 3D", price: "140 zł" },
-    { name: "Założenie rzęs 4-5D", price: "150 zł" },
-    { name: "Założenie rzęs 6D+ (Mega Volume)", price: "160 zł" },
+    { name: "Ściągnięcie rzęs", price: "40 zł", catId: 'rzesy_ext', srvId: 're1' },
+    { name: "Założenie rzęs 1-2D", price: "130 zł", catId: 'rzesy_ext', srvId: 're2' },
+    { name: "Założenie rzęs 3D", price: "140 zł", catId: 'rzesy_ext', srvId: 're3' },
+    { name: "Założenie rzęs 4-5D", price: "150 zł", catId: 'rzesy_ext', srvId: 're4' },
+    { name: "Założenie rzęs 6D+ (Mega Volume)", price: "160 zł", catId: 'rzesy_ext', srvId: 're5' },
   ]
 };
 
@@ -48,6 +48,16 @@ const rowVariants: any = {
 
 export default function LashesPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // --- МАГІЯ ВИКЛИКУ МОДАЛКИ ---
+  const handleBooking = (catId: string, srvId: string) => {
+    window.dispatchEvent(new CustomEvent('openModalGlobal'));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('prefillBooking', { 
+        detail: { catId, srvId } 
+      }));
+    }, 50);
+  };
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -101,14 +111,21 @@ export default function LashesPage() {
             animate="show"
             className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl"
           >
-            <div className="flex flex-col space-y-6">
+            <div className="flex flex-col space-y-4">
               {lashesPriceData.items.map((item, idx) => (
-                <motion.div key={idx} variants={rowVariants} className="flex justify-between items-baseline group">
+                <motion.div 
+                  key={idx} 
+                  variants={rowVariants} 
+                  onClick={() => handleBooking(item.catId, item.srvId)}
+                  className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
+                >
                   <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors pr-4">
                     {item.name}
                   </span>
-                  <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px]"></div>
-                  <span className="text-white font-bold text-base md:text-lg pl-4">{item.price}</span>
+                  <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                  <span className="text-white font-bold text-base md:text-lg pl-4 group-hover:text-foxy-accent transition-colors">
+                    {item.price}
+                  </span>
                 </motion.div>
               ))}
             </div>

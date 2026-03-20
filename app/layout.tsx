@@ -4,8 +4,8 @@ import './globals.css';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BookingButton from '@/components/layout/BookingButton';
+import CalInitializer from '@/components/layout/CalInitializer'; // Винесемо логіку сюди
 
-// Налаштування шрифтів з підтримкою польської мови
 const playfair = Playfair_Display({
   subsets: ['latin', 'latin-ext'],
   variable: '--font-playfair'
@@ -32,11 +32,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl" className="scroll-smooth">
-      {/* Застосовуємо базовий шрифт Lato, колір фону та тексту на весь `body` */}
-      <body className={`${lato.className} bg-foxy-bg text-foxy-text antialiased`}>
+      <body className={`${lato.className} ${playfair.variable} ${montserrat.variable} bg-foxy-bg text-foxy-text antialiased`}>
+        {/* Ініціалізація Cal.com (Клієнтський компонент) */}
+        <CalInitializer />
+        
         <Header />
         <main>{children}</main>
         <Footer />
+        
+        {/* Твоя кнопка, яка тепер буде відкривати календар */}
         <BookingButton />
       </body>
     </html>

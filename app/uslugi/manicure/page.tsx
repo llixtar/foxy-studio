@@ -4,19 +4,19 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-// --- ДАНІ ПРАЙСУ ---
+// --- ДАНІ ПРАЙСУ З ПРИВ'ЯЗКОЮ ДО МОДАЛКИ ---
 const manicurePriceData = {
   category: "Manicure / Pedicure",
   items: [
-    { name: "Manicure klasyczny", price: "80 zł" },
-    { name: "Ściągnięcie hybrydy/żelu + manicure klasyczny", price: "90 zł" },
-    { name: "Manicure hybrydowy", price: "140 zł" },
-    { name: "Uzupełnienie paznokci (krótkie)", price: "140 zł" },
-    { name: "Uzupełnienie paznokci (średnie)", price: "150 zł" },
-    { name: "Uzupełnienie paznokci (długie)", price: "160 zł" },
-    { name: "Przedłużanie paznokci (krótkie)", price: "170 zł" },
-    { name: "Przedłużanie paznokci (średnie)", price: "190 zł" },
-    { name: "Przedłużanie paznokci (długie)", price: "200 zł" },
+    { name: "Manicure klasyczny", price: "80 zł", catId: 'manicure', srvId: 'm1' },
+    { name: "Ściągnięcie hybrydy/żelu + manicure klasyczny", price: "90 zł", catId: 'manicure', srvId: 'm2' },
+    { name: "Manicure hybrydowy", price: "140 zł", catId: 'manicure', srvId: 'm3' },
+    { name: "Uzupełnienie paznokci (krótkie)", price: "140 zł", catId: 'manicure', srvId: 'm4' },
+    { name: "Uzupełnienie paznokci (średnie)", price: "150 zł", catId: 'manicure', srvId: 'm5' },
+    { name: "Uzupełnienie paznokci (długie)", price: "160 zł", catId: 'manicure', srvId: 'm6' },
+    { name: "Przedłużanie paznokci (krótkie)", price: "170 zł", catId: 'manicure', srvId: 'm7' },
+    { name: "Przedłużanie paznokci (średnie)", price: "190 zł", catId: 'manicure', srvId: 'm8' },
+    { name: "Przedłużanie paznokci (długie)", price: "200 zł", catId: 'manicure', srvId: 'm9' },
   ],
   promocja: "MANICURE + PEDICURE = 230 zł"
 };
@@ -34,7 +34,7 @@ const maniMasters = [
     id: 'wiktoria', 
     name: 'Wiktoria Nowak', 
     role: 'Stylizacja Paznokci', 
-    desc: 'Specjalistka od manicure sprzętowego i skomplikowanych zdobień. Jej prace charakteryzują się idealnym blaskiem i dbałością o każdy, nawet найменший detal.', 
+    desc: 'Specjalistka od manicure sprzętowego i skomplikowanych zdobień. Jej prace charakteryzują się idealnym blaskiem i dbałością o każdy, nawet najmniejszy detal.', 
     image: '/assets/team/wiktoria.webp' 
   },
 ];
@@ -62,6 +62,16 @@ const rowVariants: any = {
 
 export default function ManicurePage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // --- МАГІЯ ВИКЛИКУ МОДАЛКИ ---
+  const handleBooking = (catId: string, srvId: string) => {
+    window.dispatchEvent(new CustomEvent('openModalGlobal'));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('prefillBooking', { 
+        detail: { catId, srvId } 
+      }));
+    }, 50);
+  };
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -115,17 +125,22 @@ export default function ManicurePage() {
             animate="show"
             className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl"
           >
-            <div className="flex flex-col space-y-6">
+            <div className="flex flex-col space-y-4">
               {manicurePriceData.items.map((item, idx) => (
-                <motion.div key={idx} variants={rowVariants} className="flex justify-between items-baseline group">
+                <motion.div 
+                  key={idx} 
+                  variants={rowVariants} 
+                  onClick={() => handleBooking(item.catId, item.srvId)}
+                  className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
+                >
                   <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors pr-4">{item.name}</span>
-                  <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px]"></div>
-                  <span className="text-white font-bold text-base md:text-lg pl-4">{item.price}</span>
+                  <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                  <span className="text-white font-bold text-base md:text-lg pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
                 </motion.div>
               ))}
               
               {manicurePriceData.promocja && (
-                <motion.div variants={rowVariants} className="mt-8 p-6 rounded-2xl bg-foxy-accent/10 border border-foxy-accent/30 text-center">
+                <motion.div variants={rowVariants} className="mt-8 p-6 rounded-2xl bg-foxy-accent/10 border border-foxy-accent/30 text-center shadow-sm">
                    <p className="text-foxy-accent font-bold tracking-widest uppercase text-xs mb-1">Oferta Specjalna</p>
                    <p className="text-white font-bold text-lg md:text-xl">{manicurePriceData.promocja}</p>
                 </motion.div>

@@ -2,59 +2,59 @@
 
 import { motion } from 'framer-motion';
 
-// Реальні дані від Анжели
+// --- ДАНІ З ПРИВ'ЯЗКОЮ ДО БАЗИ МОДАЛКИ ---
 const priceData = [
   {
     category: "Manicure / Pedicure",
     items: [
-      { name: "Manicure klasyczny", price: "80 zł" },
-      { name: "Ściągnięcie hybrydy/żelu + manicure klasyczny", price: "90 zł" },
-      { name: "Manicure hybrydowy", price: "140 zł" },
-      { name: "Uzupełnienie paznokci (krótkie)", price: "140 zł" },
-      { name: "Uzupełnienie paznokci (średnie)", price: "150 zł" },
-      { name: "Uzupełnienie paznokci (długie)", price: "160 zł" },
-      { name: "Przedłużanie paznokci (krótkie)", price: "170 zł" },
-      { name: "Przedłużanie paznokci (średnie)", price: "190 zł" },
-      { name: "Przedłużanie paznokci (długie)", price: "200 zł" },
+      { name: "Manicure klasyczny", price: "80 zł", catId: 'manicure', srvId: 'm1' },
+      { name: "Ściągnięcie hybrydy/żelu + manicure klasyczny", price: "90 zł", catId: 'manicure', srvId: 'm2' },
+      { name: "Manicure hybrydowy", price: "140 zł", catId: 'manicure', srvId: 'm3' },
+      { name: "Uzupełnienie paznokci (krótkie)", price: "140 zł", catId: 'manicure', srvId: 'm4' },
+      { name: "Uzupełnienie paznokci (średnie)", price: "150 zł", catId: 'manicure', srvId: 'm5' },
+      { name: "Uzupełnienie paznokci (długie)", price: "160 zł", catId: 'manicure', srvId: 'm6' },
+      { name: "Przedłużanie paznokci (krótkie)", price: "170 zł", catId: 'manicure', srvId: 'm7' },
+      { name: "Przedłużanie paznokci (średnie)", price: "190 zł", catId: 'manicure', srvId: 'm8' },
+      { name: "Przedłużanie paznokci (długie)", price: "200 zł", catId: 'manicure', srvId: 'm9' },
     ],
     promocja: "MANICURE + PEDICURE = 230 zł"
   },
   {
     category: "Stylizacja brwi",
     items: [
-      { name: "Regulacja woskiem/pęsetą", price: "50 zł" },
-      { name: "Laminacja brwi", price: "80 zł" },
-      { name: "Koloryzacja brwi z regulacją i geometrią", price: "90 zł" },
-      { name: "Rozjaśnienie brwi + Koloryzacja + Regulacja", price: "100 zł" },
-      { name: "Laminacja brwi + regulacja + farbka", price: "120 zł" },
+      { name: "Regulacja woskiem/pęsetą", price: "50 zł", catId: 'brwi', srvId: 'b1' },
+      { name: "Laminacja brwi", price: "80 zł", catId: 'brwi', srvId: 'b2' },
+      { name: "Koloryzacja brwi z regulacją i geometrią", price: "90 zł", catId: 'brwi', srvId: 'b3' },
+      { name: "Rozjaśnienie brwi + Koloryzacja + Regulacja", price: "100 zł", catId: 'brwi', srvId: 'b4' },
+      { name: "Laminacja brwi + regulacja + farbka", price: "120 zł", catId: 'brwi', srvId: 'b5' },
     ]
   },
   {
     category: "Stylizacja rzęs",
     items: [
-      { name: "Koloryzacja rzęs", price: "50 zł" },
-      { name: "Laminacja rzęs z koloryzacją", price: "120 zł" },
-      { name: "Laminacja rzęs z koloryzacją + regeneracja botoksem", price: "140 zł" },
+      { name: "Koloryzacja rzęs", price: "50 zł", catId: 'rzesy_lami', srvId: 'rl1' },
+      { name: "Laminacja rzęs z koloryzacją", price: "120 zł", catId: 'rzesy_lami', srvId: 'rl2' },
+      { name: "Laminacja rzęs z koloryzacją + regeneracja botoksem", price: "140 zł", catId: 'rzesy_lami', srvId: 'rl3' },
     ],
     promocja: "LAMINACJA BRWI + LAMINACJA RZĘS = 200 zł"
   },
   {
     category: "Przedłużanie rzęs",
     items: [
-      { name: "Ściągnięcie rzęs", price: "40 zł" },
-      { name: "Założenie rzęs 1-2D", price: "130 zł" },
-      { name: "Założenie rzęs 3D", price: "140 zł" },
-      { name: "Założenie rzęs 4-5D", price: "150 zł" },
-      { name: "Założenie rzęs 6D+ (Mega Volume)", price: "160 zł" },
+      { name: "Ściągnięcie rzęs", price: "40 zł", catId: 'rzesy_ext', srvId: 're1' },
+      { name: "Założenie rzęs 1-2D", price: "130 zł", catId: 'rzesy_ext', srvId: 're2' },
+      { name: "Założenie rzęs 3D", price: "140 zł", catId: 'rzesy_ext', srvId: 're3' },
+      { name: "Założenie rzęs 4-5D", price: "150 zł", catId: 'rzesy_ext', srvId: 're4' },
+      { name: "Założenie rzęs 6D+ (Mega Volume)", price: "160 zł", catId: 'rzesy_ext', srvId: 're5' },
     ]
   },
   {
     category: "Tatuaż artystyczny",
     items: [
-      { name: "Konsultacja", price: "Darmowa" },
-      { name: "Tatuaż minimalistyczny 5-7cm", price: "200 zł" },
-      { name: "Tatuaż średni 10-20cm", price: "350 zł+" },
-      { name: "Tatuaż od 25cm", price: "600 zł+" }, // Додав zł для однорідності
+      { name: "Konsultacja", price: "Darmowa", catId: 'tatuaz', srvId: 't1' },
+      { name: "Tatuaż minimalistyczny 5-7cm", price: "200 zł", catId: 'tatuaz', srvId: 't2' },
+      { name: "Tatuaż średni 10-20cm", price: "350 zł+", catId: 'tatuaz', srvId: 't3' },
+      { name: "Tatuaż od 25cm", price: "600 zł+", catId: 'tatuaz', srvId: 't4' },
     ]
   }
 ];
@@ -92,6 +92,18 @@ const rowVariants: any = {
 };
 
 export default function PriceList() {
+
+  // МАГІЯ ВИКЛИКУ МОДАЛКИ (така ж як в Services)
+  const handleBooking = (catId: string, srvId: string) => {
+    window.dispatchEvent(new CustomEvent('openModalGlobal'));
+    
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('prefillBooking', { 
+        detail: { catId, srvId } 
+      }));
+    }, 50);
+  };
+
   return (
     <section id="cennik" className="bg-foxy-bg py-24 px-4 border-y border-foxy-text/5 relative z-10 overflow-hidden">
       <div className="container mx-auto max-w-5xl">
@@ -110,7 +122,7 @@ export default function PriceList() {
           <div className="w-16 h-1 bg-foxy-accent mx-auto mt-6 rounded-full opacity-50"></div>
         </motion.div>
 
-        {/* CSS-колонки для ідеального заповнення простору */}
+        {/* Колонки */}
         <motion.div 
           variants={gridVariants}
           initial="hidden"
@@ -122,37 +134,41 @@ export default function PriceList() {
             <motion.div 
               key={idx} 
               variants={categoryVariants} 
-              // break-inside-avoid не дає колонці розірвати категорію навпіл
               className="flex flex-col mb-12 break-inside-avoid"
             >
-              
               <motion.h3 variants={rowVariants} className="font-playfair text-2xl font-bold text-foxy-text mb-6 border-b border-foxy-accent/20 pb-2">
                 {section.category}
               </motion.h3>
               
-              <div className="flex flex-col space-y-4">
+              <div className="flex flex-col space-y-2">
                 {section.items.map((item, itemIdx) => (
-                  <motion.div key={itemIdx} variants={rowVariants} className="flex justify-between items-baseline group cursor-default">
-                    {/* Текст послуги. Додав pr-4, щоб довгі назви не прилипали до крапок */}
+                  <motion.div 
+                    key={itemIdx} 
+                    variants={rowVariants} 
+                    onClick={() => handleBooking(item.catId, item.srvId)}
+                    className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
+                  >
+                    {/* Текст послуги */}
                     <span className="text-foxy-text/90 font-medium text-sm md:text-base transition-colors group-hover:text-foxy-accent pr-4 max-w-[70%]">
                       {item.name}
                     </span>
                     
+                    {/* Крапочки */}
                     <div className="flex-grow border-b-2 border-dotted border-foxy-text/10 relative top-[-4px] transition-colors group-hover:border-foxy-accent/30"></div>
                     
                     {/* Ціна */}
-                    <span className="text-foxy-text font-bold text-sm md:text-base whitespace-nowrap pl-4">
+                    <span className="text-foxy-text font-bold text-sm md:text-base whitespace-nowrap pl-4 group-hover:text-foxy-accent transition-colors">
                       {item.price}
                     </span>
                   </motion.div>
                 ))}
               </div>
 
-              {/* Блок Промоції (рендериться тільки якщо є дані) */}
+              {/* Блок Промоції */}
               {section.promocja && (
                 <motion.div 
                   variants={rowVariants}
-                  className="mt-6 p-4 rounded-xl bg-foxy-accent/5 border border-foxy-accent/20 flex items-start md:items-center gap-3 shadow-sm hover:bg-foxy-accent/10 transition-colors"
+                  className="mt-6 p-4 rounded-xl bg-foxy-accent/5 border border-foxy-accent/20 flex items-start md:items-center gap-3 shadow-sm"
                 >
                   <span className="text-foxy-accent text-lg mt-0.5 md:mt-0"></span>
                   <div className="flex flex-col">
