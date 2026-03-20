@@ -16,6 +16,9 @@ const priceData = [
       { name: "Przedłużanie paznokci (krótkie)", price: "170 zł", catId: 'manicure', srvId: 'm7' },
       { name: "Przedłużanie paznokci (średnie)", price: "190 zł", catId: 'manicure', srvId: 'm8' },
       { name: "Przedłużanie paznokci (długie)", price: "200 zł", catId: 'manicure', srvId: 'm9' },
+      // НОВІ ПОЗИЦІЇ ПЕДИКЮРУ
+      { name: "Pedicure bez malowania", price: "100 zł", catId: 'pedicure', srvId: 'p1' },
+      { name: "Pedicure z hybrydą", price: "130 zł", catId: 'pedicure', srvId: 'p2' },
     ],
     promocja: "MANICURE + PEDICURE = 230 zł"
   },
@@ -93,7 +96,7 @@ const rowVariants: any = {
 
 export default function PriceList() {
 
-  // МАГІЯ ВИКЛИКУ МОДАЛКИ (така ж як в Services)
+  // МАГІЯ ВИКЛИКУ МОДАЛКИ
   const handleBooking = (catId: string, srvId: string) => {
     window.dispatchEvent(new CustomEvent('openModalGlobal'));
     

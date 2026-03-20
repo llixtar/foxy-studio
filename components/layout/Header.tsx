@@ -19,6 +19,7 @@ const navItems = [
   { title: 'Cennik', url: '/#cennik', type: 'link' },
   { title: 'Portfolio', url: '/#portfolio', type: 'link' },
   { title: 'Zespół', url: '/#zespol', type: 'link' },
+  { title: 'Opinie', url: '/#opinie', type: 'link' }, // 👈 НОВИЙ ПУНКТ
   { title: 'Kontakt', url: '/#kontakt', type: 'link' },
 ];
 
@@ -124,7 +125,7 @@ export default function Header() {
               ))}
             </nav>
 
-            {/* БУРГЕР-КНОПКА (z-101 щоб бути НАД фоном) */}
+            {/* БУРГЕР-КНОПКА */}
             <button
               className={`md:hidden p-2 relative z-[101] transition-colors hover:text-foxy-accent ${
                 isPastHero ? 'text-foxy-text' : 'text-white'
@@ -139,7 +140,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* 2. МОБІЛЬНЕ МЕНЮ (ПОВНІСТЮ ЗОВНІ ХЕДЕРА) */}
+      {/* 2. МОБІЛЬНЕ МЕНЮ */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -149,7 +150,7 @@ export default function Header() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-[120] flex flex-col bg-foxy-bg backdrop-blur-3xl md:hidden overflow-y-auto"
           >
-            {/* Header меню (лого + хрестик) */}
+            {/* Header меню */}
             <div className="flex h-24 items-center justify-between px-6 border-b border-foxy-text/5 shrink-0">
               <Link href="/" onClick={closeMenu}>
                 <img src="/assets/FOXY.svg" alt="Foxy Studio Logo" className="h-16 w-auto" />

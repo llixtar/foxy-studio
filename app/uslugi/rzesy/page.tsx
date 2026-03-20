@@ -16,16 +16,16 @@ const lashesPriceData = {
   ]
 };
 
-// --- МАЙСТЕР ---
+// --- МАЙСТЕР (ІРИНА - ЕКСПЕРТ З ВІЙ) ---
 const master = { 
-  id: 'julia', 
-  name: 'Julia Kowalska', 
-  role: 'Ekspertka Przedłużania Rzęs', 
-  desc: 'Ekspertka od przedłużania rzęs na każdym poziomie: od subtelnej klasyki po spektakularne mega volume. Precyzja i indywidualне podejście Julii sprawiają, że każda stylizacja tworzy hipnotyzujące i głębokie spojrzenie.', 
-  image: '/assets/team/julia.webp' 
+  id: 'iryna', 
+  name: 'Iryna', 
+  role: 'Stylistka Rzęs / Mani & Pedi', 
+  desc: 'Prawdziwa „złota rączka” Foxy Studio. Specjalizuje się w przedłużaniu rzęs w każdej technice: od subtelnej klasyki po spektakularne mega volume. Jej prace charakteryzują się niesamowitą precyzją, szybkością i trwałością.', 
+  image: '/assets/team/iryna.JPG' 
 };
 
-// --- ГАЛЕРЕЯ (5 фото вій) ---
+// --- ГАЛЕРЕЯ ---
 const generateImages = (category: string, folder: string, count: number, prefix: string) => {
   return Array.from({ length: count }).map((_, i) => ({
     id: `${prefix}-${i + 1}`,
@@ -49,7 +49,6 @@ const rowVariants: any = {
 export default function LashesPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // --- МАГІЯ ВИКЛИКУ МОДАЛКИ ---
   const handleBooking = (catId: string, srvId: string) => {
     window.dispatchEvent(new CustomEvent('openModalGlobal'));
     setTimeout(() => {
@@ -75,29 +74,19 @@ export default function LashesPage() {
     } else {
       document.body.style.overflow = 'unset';
     }
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (lightboxIndex === null) return;
-      if (e.key === 'Escape') setLightboxIndex(null);
-      if (e.key === 'ArrowRight') showNext();
-      if (e.key === 'ArrowLeft') showPrev();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
   }, [lightboxIndex]);
 
   return (
     <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden">
       
-      {/* 1. ПРАЙС-ЛИСТ */}
+      {/* 1. ПРАЙС ТА ІНТРО */}
       <section className="px-4 mb-24 relative z-10">
-        <div className="container mx-auto max-w-3xl">
+        <div className="container mx-auto max-w-4xl">
+          
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
+            className="text-center mb-10"
           >
             <h1 className="font-playfair text-5xl md:text-6xl font-bold text-foxy-text uppercase tracking-tight">
               Przedłużanie <span className="italic font-normal">Rzęs</span>
@@ -105,11 +94,45 @@ export default function LashesPage() {
             <div className="w-24 h-1 bg-foxy-accent mx-auto mt-6 rounded-full opacity-50"></div>
           </motion.div>
 
+          {/* СТИЛІЗОВАНИЙ БЛОК ВІД АНЖЕЛИ */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-16"
+          >
+            <div className="bg-gradient-to-b from-foxy-accent/10 to-transparent border border-foxy-accent/20 p-8 md:p-10 rounded-[2.5rem] text-center shadow-lg">
+              
+              <p className="font-playfair text-xl md:text-3xl text-foxy-text italic mb-10 leading-relaxed">
+                "Oferujemy przedłużanie rzęs w różnych technikach i objętościach. Kolory rzęs dopasowane do każdego gustu."
+              </p>
+              
+              <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8 text-foxy-text/80 font-lato text-sm md:text-base">
+                {/* Картка 1: Кава */}
+                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                  <p className="text-center leading-snug">
+                    Po zabiegu oferujemy<br/>
+                    <span className="text-foxy-text font-bold uppercase tracking-wider">kawę na wynos</span>
+                  </p>
+                </div>
+                
+                {/* Картка 2: Лояльність */}
+                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                  <p className="text-center leading-snug">
+                    Dla stałych klientek mamy<br/>
+                    <span className="text-foxy-text font-bold uppercase tracking-wider">program lojalnościowy</span>
+                  </p>
+                </div>
+              </div>
+              
+            </div>
+          </motion.div>
+
           <motion.div 
             variants={categoryVariants}
             initial="hidden"
             animate="show"
-            className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl"
+            className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl max-w-3xl mx-auto"
           >
             <div className="flex flex-col space-y-4">
               {lashesPriceData.items.map((item, idx) => (
@@ -150,16 +173,13 @@ export default function LashesPage() {
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
                 />
               </div>
             </div>
             <div className="w-full md:w-1/2 text-center md:text-left">
-              <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-xs mb-4">{master.role}</p>
-              <h2 className="font-playfair text-4xl md:text-6xl font-bold text-foxy-text mb-8">{master.name}</h2>
-              <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">
-                {master.desc}
-              </p>
+              <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{master.role}</p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-bold text-foxy-text mb-8">{master.name}</h2>
+              <p className="text-foxy-text/80 leading-relaxed font-lato text-lg">{master.desc}</p>
             </div>
           </motion.div>
         </div>
@@ -168,7 +188,7 @@ export default function LashesPage() {
       {/* 3. ГАЛЕРЕЯ */}
       <section className="px-4 relative z-10">
         <div className="container mx-auto max-w-6xl text-center mb-16">
-          <h2 className="font-playfair text-4xl font-bold text-foxy-text tracking-tight">Nasze <span className="italic font-normal">Stylizacje</span></h2>
+          <h2 className="font-playfair text-4xl font-bold text-foxy-text">Nasze <span className="italic">Stylizacje</span></h2>
         </div>
         <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
           {lashImages.map((img: any, index: number) => {
@@ -182,7 +202,7 @@ export default function LashesPage() {
               >
                 <Image 
                   src={img.src} 
-                  alt="Lashes" 
+                  alt="Lashes work" 
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 768px) 50vw, 33vw"
@@ -200,36 +220,19 @@ export default function LashesPage() {
       <AnimatePresence>
         {lightboxIndex !== null && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
             onClick={() => setLightboxIndex(null)}
           >
-            <button 
-              className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" 
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxIndex(null);
-              }}
-            >
+            <button className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" onClick={() => setLightboxIndex(null)}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <motion.div 
-              key={lightboxIndex}
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }}
+              key={lightboxIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
               className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image 
-                src={lashImages[lightboxIndex].src} 
-                fill
-                className="object-contain rounded-lg shadow-2xl" 
-                alt="Lash Zoom" 
-                sizes="100vw"
-                priority
-              />
+              <Image src={lashImages[lightboxIndex].src} fill className="object-contain rounded-lg" alt="Lash Zoom" sizes="100vw" priority />
               <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
               </button>

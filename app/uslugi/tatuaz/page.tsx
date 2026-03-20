@@ -17,9 +17,9 @@ const tattooPriceData = {
 
 const tattooMaster = {
     id: 'anzhela',
-    name: 'Anzhela Ilchyshyn',
-    role: 'Właścicielka / Tatuaż & Manicure',
-    desc: 'Założycielka Foxy Studio. Perfekcjonistka, która łączy pasję do tatuażu з mistrzostwem w stylizacji paznokci. Jej prace to czysta sztuka, w którą wkłada całą swoją duszę.',
+    name: 'Anzhela',
+    role: 'Właścicielka / Artystka Tatuażu',
+    desc: 'Założycielka Foxy Studio. Specjalizuje się w subtelnym minimalizmie, fine line oraz liternictwie. Jej prace charakteryzują się niezwykłą lekkością i precyzją, tworząc na skórze trwałą i estetyczną biżuterię.',
     image: '/assets/team/anzhela.webp'
 };
 
@@ -46,12 +46,8 @@ const rowVariants: any = {
 export default function TattooPage() {
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-    // МАГІЯ ВИКЛИКУ МОДАЛКИ (Deep Linking)
     const handleBooking = (catId: string, srvId: string) => {
-        // Відкриваємо модалку
         window.dispatchEvent(new CustomEvent('openModalGlobal'));
-        
-        // Передаємо дані послуги
         setTimeout(() => {
             window.dispatchEvent(new CustomEvent('prefillBooking', { 
                 detail: { catId, srvId } 
@@ -75,30 +71,19 @@ export default function TattooPage() {
         } else {
             document.body.style.overflow = 'unset';
         }
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (lightboxIndex === null) return;
-            if (e.key === 'Escape') setLightboxIndex(null);
-            if (e.key === 'ArrowRight') showNext();
-            if (e.key === 'ArrowLeft') showPrev();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            document.body.style.overflow = 'unset';
-        };
     }, [lightboxIndex]);
 
     return (
-        <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative">
+        <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden">
 
-            {/* 1. ПРАЙС */}
+            {/* 1. ПРАЙС ТА ІНТРО */}
             <section className="px-4 mb-24 relative z-10">
-                <div className="container mx-auto max-w-3xl">
+                <div className="container mx-auto max-w-4xl">
+                    
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-center mb-16"
+                        className="text-center mb-10"
                     >
                         <h1 className="font-playfair text-5xl md:text-6xl font-bold text-foxy-text uppercase tracking-tight">
                             Tatuaż <span className="italic font-normal">Artystyczny</span>
@@ -106,11 +91,42 @@ export default function TattooPage() {
                         <div className="w-24 h-1 bg-foxy-accent mx-auto mt-6 rounded-full opacity-50"></div>
                     </motion.div>
 
+                    {/* СТИЛІЗОВАНИЙ БЛОК ВІД АНЖЕЛИ */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="mb-16"
+                    >
+                        <div className="bg-gradient-to-b from-foxy-accent/10 to-transparent border border-foxy-accent/20 p-8 md:p-10 rounded-[2.5rem] text-center shadow-lg">
+                            
+                            <p className="font-playfair text-xl md:text-3xl text-foxy-text italic mb-10 leading-relaxed">
+                                "Tatuaże w stylu minimalizm, fine line i lettering. Indywidualne projekty dopasowane do Ciebie — estetycznie, delikatnie i z pomysłem."
+                            </p>
+                            
+                            <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8 text-foxy-text/80 font-lato text-sm md:text-base">
+                                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                                    <p className="text-center leading-snug">
+                                        Pełna sterylność oraz<br/>
+                                        <span className="text-foxy-text font-bold uppercase tracking-wider">komfort podczas sesji</span>
+                                    </p>
+                                </div>
+                                
+                                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                                    <p className="text-center leading-snug">
+                                        W bonusie serwujemy<br/>
+                                        <span className="text-foxy-text font-bold uppercase tracking-wider">napoje, słodkości i masaż</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+
                     <motion.div
                         variants={categoryVariants}
                         initial="hidden"
                         animate="show"
-                        className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl"
+                        className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl max-w-3xl mx-auto"
                     >
                         <div className="flex flex-col space-y-4">
                             {tattooPriceData.items.map((item, idx) => (
@@ -133,32 +149,37 @@ export default function TattooPage() {
             {/* 2. МАЙСТЕР */}
             <section className="px-4 mb-24 relative z-10">
                 <div className="container mx-auto max-w-5xl">
-                    <div className="flex flex-col md:flex-row items-center gap-12 md:gap-20">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 50 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="flex flex-col md:flex-row items-center gap-12 md:gap-20"
+                    >
                         <div className="w-full md:w-1/2">
-                            <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl">
+                            <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
                                 <Image
                                     src={tattooMaster.image}
                                     alt={tattooMaster.name}
                                     fill
                                     className="object-cover"
                                     sizes="(max-width: 768px) 100vw, 50vw"
-                                    priority
                                 />
                             </div>
                         </div>
                         <div className="w-full md:w-1/2 text-center md:text-left">
-                            <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-xs mb-4">{tattooMaster.role}</p>
-                            <h2 className="font-playfair text-4xl md:text-6xl font-bold text-foxy-text mb-8">{tattooMaster.name}</h2>
-                            <p className="text-foxy-text/80 leading-relaxed font-lato text-lg">{tattooMaster.desc}</p>
+                            <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{tattooMaster.role}</p>
+                            <h2 className="font-playfair text-4xl md:text-5xl font-bold text-foxy-text mb-8">{tattooMaster.name}</h2>
+                            <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">{tattooMaster.desc}</p>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* 3. ГАЛЕРЕЯ */}
             <section className="px-4 relative z-10">
-                <div className="container mx-auto max-w-6xl text-center mb-12">
-                    <h2 className="font-playfair text-4xl font-bold text-foxy-text">Moje <span className="italic">Prace</span></h2>
+                <div className="container mx-auto max-w-4xl text-center mb-16">
+                    <h2 className="font-playfair text-4xl font-bold text-foxy-text mb-4">Portfolio <span className="italic">Prac</span></h2>
+                    <p className="text-foxy-accent font-bold uppercase tracking-widest text-xs">Zrób coś pięknego dla siebie ❤️</p>
                 </div>
                 <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
                     {tattooImages.map((img: any, index: number) => {
@@ -178,7 +199,7 @@ export default function TattooPage() {
                                     sizes="(max-width: 768px) 50vw, 25vw"
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="text-white font-bold tracking-widest uppercase text-xs">Powiększ</span>
+                                    <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
                                 </div>
                             </motion.div>
                         );
@@ -190,40 +211,19 @@ export default function TattooPage() {
             <AnimatePresence>
                 {lightboxIndex !== null && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
                         onClick={() => setLightboxIndex(null)}
                     >
-                        <button
-                            className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setLightboxIndex(null);
-                            }}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                        <button className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" onClick={() => setLightboxIndex(null)}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
-
-                        <motion.div
-                            key={lightboxIndex}
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
+                        <motion.div 
+                            key={lightboxIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                             className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <Image
-                                src={tattooImages[lightboxIndex].src}
-                                fill
-                                className="object-contain rounded-lg shadow-2xl"
-                                alt="Zoomed Tattoo"
-                                sizes="100vw"
-                                priority
-                            />
-
+                            <Image src={tattooImages[lightboxIndex].src} fill className="object-contain rounded-lg shadow-2xl" alt="Zoomed Tattoo" sizes="100vw" priority />
                             <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                             </button>

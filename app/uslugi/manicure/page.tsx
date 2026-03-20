@@ -17,25 +17,27 @@ const manicurePriceData = {
     { name: "Przedłużanie paznokci (krótkie)", price: "170 zł", catId: 'manicure', srvId: 'm7' },
     { name: "Przedłużanie paznokci (średnie)", price: "190 zł", catId: 'manicure', srvId: 'm8' },
     { name: "Przedłużanie paznokci (długie)", price: "200 zł", catId: 'manicure', srvId: 'm9' },
+    { name: "Pedicure bez malowania", price: "100 zł", catId: 'pedicure', srvId: 'p1' },
+    { name: "Pedicure z hybrydą", price: "130 zł", catId: 'pedicure', srvId: 'p2' },
   ],
   promocja: "MANICURE + PEDICURE = 230 zł"
 };
 
-// --- МАЙСТРИ МАНІКЮРУ ---
+// --- РЕАЛЬНІ МАЙСТРИ МАНІКЮРУ/ПЕДИКЮРУ ---
 const maniMasters = [
   { 
     id: 'anzhela', 
-    name: 'Anzhela Ilchyshyn', 
-    role: 'Właścicielka / Tatuaż & Manicure', 
-    desc: 'Założycielka Foxy Studio. Perfekcjonistka, która przenosi swoją artystyczną precyzję z tatuażu na stylizację paznokci. Tworzy unikalne wzory, które zachwycają trwałością.', 
+    name: 'Anzhela', 
+    role: 'Właścicielka / Tatuaż / Manicure', 
+    desc: 'Założycielka Foxy Studio. Perfekcjonistka, która łączy pasję do tatuażu z mistrzostwem w stylizacji paznokci. Jej prace to czysta sztuka, w którą wkłada całą swoją duszę.', 
     image: '/assets/team/anzhela.webp' 
   },
   { 
-    id: 'wiktoria', 
-    name: 'Wiktoria Nowak', 
-    role: 'Stylizacja Paznokci', 
-    desc: 'Specjalistka od manicure sprzętowego i skomplikowanych zdobień. Jej prace charakteryzują się idealnym blaskiem i dbałością o każdy, nawet najmniejszy detal.', 
-    image: '/assets/team/wiktoria.webp' 
+    id: 'iryna', 
+    name: 'Iryna', 
+    role: 'Mani & Pedi / Rzęsy', 
+    desc: 'Prawdziwa „złota rączka”. Wykonuje swoją pracę szybko i na najwyższym poziomie! Z nią nigdy nie będzie nudno. Szeroki wybór materiałów, pełna sterylność oraz przyjemna atmosfera – gwarantowane!', 
+    image: '/assets/team/iryna.JPG' 
   },
 ];
 
@@ -63,7 +65,6 @@ const rowVariants: any = {
 export default function ManicurePage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // --- МАГІЯ ВИКЛИКУ МОДАЛКИ ---
   const handleBooking = (catId: string, srvId: string) => {
     window.dispatchEvent(new CustomEvent('openModalGlobal'));
     setTimeout(() => {
@@ -105,13 +106,14 @@ export default function ManicurePage() {
   return (
     <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden">
       
-      {/* 1. ПРАЙС */}
+      {/* 1. ПРАЙС ТА ІНТРО */}
       <section className="px-4 mb-24 relative z-10">
-        <div className="container mx-auto max-w-3xl">
+        <div className="container mx-auto max-w-4xl">
+          
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
+            className="text-center mb-10"
           >
             <h1 className="font-playfair text-5xl md:text-6xl font-bold text-foxy-text uppercase tracking-tight">
               Manicure & <span className="italic font-normal">Pedicure</span>
@@ -119,20 +121,56 @@ export default function ManicurePage() {
             <div className="w-24 h-1 bg-foxy-accent mx-auto mt-6 rounded-full opacity-50"></div>
           </motion.div>
 
+          {/* СТИЛІЗОВАНИЙ БЛОК ВІД АНЖЕЛИ */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-16"
+          >
+            <div className="bg-gradient-to-b from-foxy-accent/10 to-transparent border border-foxy-accent/20 p-8 md:p-10 rounded-[2.5rem] text-center shadow-lg">
+              
+              <p className="font-playfair text-xl md:text-3xl text-foxy-text italic mb-10 leading-relaxed">
+                "Manicure w naszym salonie to nie tylko piękne paznokcie, ale także relaks – chwila, którą chce się przedłużyć „jeszcze troszkę”."
+              </p>
+              
+              <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8 text-foxy-text/80 font-lato text-sm md:text-base">
+                {/* Картка 1: Релакс та напої */}
+                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-6 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                  {/* <span className="text-3xl">🥂</span> -> СМАЙЛ ВИДАЛЕНО */}
+                  <p className="text-center leading-snug">
+                    Podczas zabiegu oferujemy<br/>
+                    <span className="text-foxy-text font-bold">masaż stóp, napoje i słodkości</span>
+                  </p>
+                </div>
+                
+                {/* Картка 2: Лояльність */}
+                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-6 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                  {/* <span className="text-3xl">💎</span> -> СМАЙЛ ВИДАЛЕНО */}
+                  <p className="text-center leading-snug">
+                    Dla stałych klientek mamy<br/>
+                    <span className="text-foxy-text font-bold">program lojalnościowy i oferty</span>
+                  </p>
+                </div>
+              </div>
+              
+            </div>
+          </motion.div>
+
           <motion.div 
             variants={categoryVariants}
             initial="hidden"
             animate="show"
-            className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl"
+            className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl max-w-3xl mx-auto"
           >
             <div className="flex flex-col space-y-4">
               {manicurePriceData.items.map((item, idx) => (
                 <motion.div 
-                  key={idx} 
-                  variants={rowVariants} 
-                  onClick={() => handleBooking(item.catId, item.srvId)}
-                  className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
-                >
+                    key={idx} 
+                    variants={rowVariants} 
+                    onClick={() => handleBooking(item.catId, item.srvId)}
+                    className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
+                  >
                   <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors pr-4">{item.name}</span>
                   <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
                   <span className="text-white font-bold text-base md:text-lg pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>

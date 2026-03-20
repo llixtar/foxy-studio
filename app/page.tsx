@@ -5,6 +5,7 @@ import PriceList from '@/components/home/sections/PriceList';
 import Gallery from '@/components/home/sections/Gallery';
 import Team from '@/components/home/sections/Team';
 import Contact from '@/components/home/sections/Contact';
+import Reviews from '@/components/home/sections/Reviews';
 
 export default function Home() {
   return (
@@ -13,8 +14,9 @@ export default function Home() {
       <Services />
       <PriceList />
       <Team />
+      <Reviews />
       <Contact />
-
+      
       <Gallery />
       {/* <Promotions />  */}
       {/* Місце для наступних секцій: послуги, відгуки тощо */}
