@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCalApi } from "@calcom/embed-react";
+import { supabase } from '@/lib/supabase'; // 👈 Додали імпорт Supabase
 
 // --- ТИПІЗАЦІЯ ---
 type Category = {
@@ -12,6 +13,7 @@ type Category = {
   disabled?: boolean;
 };
 
+// Це залишаємо статичним (візуал категорій)
 const categories: Category[] = [
   { id: 'manicure', title: 'Manicure', icon: '💅' },
   { id: 'pedicure', title: 'Pedicure', icon: '🦶' },
@@ -21,49 +23,39 @@ const categories: Category[] = [
   { id: 'tatuaz', title: 'Tatuaż artystyczny', icon: '🖋️' }
 ];
 
-const servicesDB: Record<string, any[]> = {
-  'manicure': [
-    { id: 'm1', name: 'Manicure klasyczny', price: 80, duration: 30, durationText: '30 min' },
-    { id: 'm2', name: 'Ściągnięcie hybrydy/żelu + manicure klasyczny', price: 90, duration: 60, durationText: '1 godz' },
-    { id: 'm3', name: 'Manicure hybrydowy', price: 140, duration: 120, durationText: '1,5 - 2 godz' },
-    { id: 'm4', name: 'Uzupełnienie paznokci (krótkie)', price: 140, duration: 120, durationText: '2 godz' },
-    { id: 'm5', name: 'Uzupełnienie paznokci (średnie)', price: 150, duration: 150, durationText: '2 - 2,5 godz' },
-    { id: 'm6', name: 'Uzupełnienie paznokci (długie)', price: 160, duration: 150, durationText: '2 - 2,5 godz' },
-    { id: 'm7', name: 'Przedłużanie paznokci (krótkie)', price: 170, duration: 180, durationText: '2,5 - 3 godz' },
-    { id: 'm8', name: 'Przedłużanie paznokci (średnie)', price: 190, duration: 180, durationText: '2,5 - 3 godz' },
-    { id: 'm9', name: 'Przedłużanie paznokci (długie)', price: 200, duration: 210, durationText: '2,5 - 3,5 godz' },
-  ],
-  'pedicure': [
-    { id: 'p1', name: 'Pedicure bez malowania', price: 100, duration: 60, durationText: '1 godz' },
-    { id: 'p2', name: 'Pedicure z hybrydą', price: 130, duration: 90, durationText: '1,5 godz' },
-  ],
-  'brwi': [
-    { id: 'b1', name: 'Regulacja woskiem/pęsetą', price: 50, duration: 30, durationText: '30 min' },
-    { id: 'b2', name: 'Laminacja brwi', price: 80, duration: 30, durationText: '30 min' },
-    { id: 'b3', name: 'Koloryzacja brwi z regulacją i geometrią', price: 90, duration: 50, durationText: '50 min' },
-    { id: 'b4', name: 'Rozjaśnienie brwi + Koloryzacja + Regulacja', price: 100, duration: 75, durationText: '1 godz 15 min' },
-    { id: 'b5', name: 'Laminacja brwi + regulacja + farbka', price: 120, duration: 75, durationText: '1 godz 15 min' },
-  ],
-  'rzesy_lami': [
-    { id: 'rl1', name: 'Koloryzacja rzęs', price: 50, duration: 30, durationText: '30 min' },
-    { id: 'rl2', name: 'Laminacja rzęs z koloryzacją', price: 120, duration: 90, durationText: '1,5 godz' },
-    { id: 'rl3', name: 'Laminacja rzęs z koloryzacją + regeneracja botoksem', price: 140, duration: 90, durationText: '1,5 godz' },
-  ],
-  'rzesy_ext': [
-    { id: 're1', name: 'Ściągnięcie rzęs', price: 40, duration: 30, durationText: '30 min' },
-    { id: 're2', name: 'Założenie rzęs 1-2D', price: 130, duration: 120, durationText: '2 godz' },
-    { id: 're3', name: 'Założenie rzęs 3D', price: 140, duration: 120, durationText: '2 godz' },
-    { id: 're4', name: 'Założenie rzęs 4-5D', price: 150, duration: 120, durationText: '2 godz' },
-    { id: 're5', name: 'Założenie rzęs 6D+ (Mega Volume)', price: 160, duration: 120, durationText: '2 godz' },
-  ],
-  'tatuaz': [
-    { id: 't1', name: 'Konsultacja', price: 0, duration: 60, durationText: '30 min - 1 godz' },
-    { id: 't2', name: 'Tatuaż minimalistyczny 5-7cm', price: 200, duration: 120, durationText: '1,5 - 2 godz' },
-    { id: 't3', name: 'Tatuaż średni 10-20cm', price: 350, duration: 180, durationText: '2 - 3 godz' },
-    { id: 't4', name: 'Tatuaż від 25cm', price: 600, duration: 240, durationText: 'od 4 godz' },
-  ]
+// ЦЕ НАША БАЗА ТРИВАЛОСТІ (Тривалість залишаємо тут, бо в Supabase її немає)
+const durationDB: Record<string, { duration: number, durationText: string }> = {
+  'm1': { duration: 30, durationText: '30 min' },
+  'm2': { duration: 60, durationText: '1 godz' },
+  'm3': { duration: 120, durationText: '1,5 - 2 godz' },
+  'm4': { duration: 120, durationText: '2 godz' },
+  'm5': { duration: 150, durationText: '2 - 2,5 godz' },
+  'm6': { duration: 150, durationText: '2 - 2,5 godz' },
+  'm7': { duration: 180, durationText: '2,5 - 3 godz' },
+  'm8': { duration: 180, durationText: '2,5 - 3 godz' },
+  'm9': { duration: 210, durationText: '2,5 - 3,5 godz' },
+  'p1': { duration: 60, durationText: '1 godz' },
+  'p2': { duration: 90, durationText: '1,5 godz' },
+  'b1': { duration: 30, durationText: '30 min' },
+  'b2': { duration: 30, durationText: '30 min' },
+  'b3': { duration: 50, durationText: '50 min' },
+  'b4': { duration: 75, durationText: '1 godz 15 min' },
+  'b5': { duration: 75, durationText: '1 godz 15 min' },
+  'rl1': { duration: 30, durationText: '30 min' },
+  'rl2': { duration: 90, durationText: '1,5 godz' },
+  'rl3': { duration: 90, durationText: '1,5 godz' },
+  're1': { duration: 30, durationText: '30 min' },
+  're2': { duration: 120, durationText: '2 godz' },
+  're3': { duration: 120, durationText: '2 godz' },
+  're4': { duration: 120, durationText: '2 godz' },
+  're5': { duration: 120, durationText: '2 godz' },
+  't1': { duration: 60, durationText: '30 min - 1 godz' },
+  't2': { duration: 120, durationText: '1,5 - 2 godz' },
+  't3': { duration: 180, durationText: '2 - 3 godz' },
+  't4': { duration: 240, durationText: 'od 4 godz' },
 };
 
+// Дані про майстрів залишаємо статичними
 const mastersDB: Record<string, string[]> = {
   'manicure': ['anzhela', 'iryna'],
   'pedicure': ['iryna'], 
@@ -87,16 +79,55 @@ const formatDuration = (minutes: number) => {
   return m > 0 ? `${h} godz ${m} min` : `${h} godz`;
 };
 
+// Хелпер для парсингу ціни (бо в базі вона "120 zł", а нам для математики треба 120)
+const parsePrice = (priceStr: string): number => {
+  const num = parseInt(priceStr.replace(/\D/g, ''));
+  return isNaN(num) ? 0 : num;
+};
+
 export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [step, setStep] = useState(1);
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<any[]>([]);
   const [selectedMasterId, setSelectedMasterId] = useState<string | null>(null);
+  
+  // 👈 НОВИЙ СТАН: ДИНАМІЧНІ ПОСЛУГИ З БАЗИ
+  const [servicesFromDB, setServicesFromDB] = useState<Record<string, any[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Завантажуємо послуги, коли модалка відкривається (або одразу)
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data } = await supabase.from('services').select('*').order('id', { ascending: true });
+      if (data) {
+        // Форматуємо дані так, як очікує модалка (групуємо по cat_id)
+        const grouped: Record<string, any[]> = {};
+        data.forEach(srv => {
+          const catId = srv.cat_id;
+          if (!grouped[catId]) grouped[catId] = [];
+          
+          // Підтягуємо тривалість з нашого локального словника, якщо є
+          const durationInfo = durationDB[srv.srv_id] || { duration: 60, durationText: '1 godz' }; // дефолт
+          
+          grouped[catId].push({
+            id: srv.srv_id,
+            name: srv.title,
+            price: parsePrice(srv.price), // Перетворюємо "120 zł" в 120
+            priceText: srv.price,         // Зберігаємо оригінальний текст для відображення
+            duration: durationInfo.duration,
+            durationText: durationInfo.durationText
+          });
+        });
+        setServicesFromDB(grouped);
+      }
+      setIsLoading(false);
+    };
+    fetchServices();
+  }, []);
 
   const handleClose = () => {
     document.body.style.overflow = 'unset';
     onClose();
-    // Скидаємо стан після того, як анімація закриття завершиться
     setTimeout(() => { 
       setStep(1); setSelectedCat(null); setSelectedServices([]); setSelectedMasterId(null); 
     }, 400);
@@ -105,9 +136,7 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
   const handleBack = () => {
     if (step === 1) return;
     if (step === 3 && selectedServices.length === 1) {
-      setStep(1);
-      setSelectedCat(null);
-      setSelectedServices([]);
+      setStep(1); setSelectedCat(null); setSelectedServices([]);
     } else {
       setStep(prev => prev - 1);
     }
@@ -118,29 +147,27 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
     const handlePrefill = (e: any) => {
       const { catId, srvId } = e.detail;
       setSelectedCat(catId);
-      const service = servicesDB[catId]?.find(s => s.id === srvId);
+      // Змінено: шукаємо в новій змінній servicesFromDB
+      const service = servicesFromDB[catId]?.find(s => s.id === srvId);
       if (service) {
         setSelectedServices([service]);
         setStep(3);
       }
     };
-    window.addEventListener('prefillBooking', handlePrefill);
+    
+    // Щоб префілл спрацював, дані вже мають бути завантажені
+    if (!isLoading) {
+      window.addEventListener('prefillBooking', handlePrefill);
+    }
     return () => window.removeEventListener('prefillBooking', handlePrefill);
-  }, []);
+  }, [isLoading, servicesFromDB]);
 
   // Фаталіті після успішного бронювання
   useEffect(() => {
     const handleGlobalMessage = (event: MessageEvent) => {
-      const isBookingSuccess = 
-        event.data?.type === "bookingSuccessful" || 
-        event.data?.type === "bookingConfirmed" ||
-        (event.data?.origin === "Cal" && event.data?.action === "bookingSuccessful");
-
+      const isBookingSuccess = event.data?.type === "bookingSuccessful" || event.data?.type === "bookingConfirmed" || (event.data?.origin === "Cal" && event.data?.action === "bookingSuccessful");
       if (isBookingSuccess) {
-        setTimeout(() => {
-          handleClose();
-          window.location.reload();
-        }, 2000); 
+        setTimeout(() => { handleClose(); window.location.reload(); }, 2000); 
       }
     };
     window.addEventListener("message", handleGlobalMessage);
@@ -162,7 +189,6 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
     const cal = await getCalApi({"namespace":"booking"});
     const master = teamProfiles[selectedMasterId!];
     
-    // РИБА: slug для Cal.com
     let eventSlug = "30min";
     if (master.calUser === 'foxy-anzhela-test') {
       if (totalDuration <= 60) eventSlug = "mani-1h";
@@ -172,11 +198,7 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
 
     cal("modal", {
       calLink: `${master.calUser}/${eventSlug}`,
-      config: { 
-        layout: "month_view", 
-        theme: "dark", 
-        notes: `USŁUGI: ${selectedServices.map(s => s.name).join(", ")}. SUMA: ${totalPrice} zł.` 
-      }
+      config: { layout: "month_view", theme: "dark", notes: `USŁUGI: ${selectedServices.map(s => s.name).join(", ")}. SUMA: ${totalPrice} zł.` }
     });
   };
 
@@ -184,23 +206,10 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
-            className="absolute inset-0 bg-black/95 backdrop-blur-md cursor-pointer" 
-            onClick={handleClose} 
-          />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/95 backdrop-blur-md cursor-pointer" onClick={handleClose} />
 
-          {/* Modal Content */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 20 }} 
-            animate={{ opacity: 1, scale: 1, y: 0 }} 
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            onClick={(e) => e.stopPropagation()} // ЗАБОРОНЯЄМО ЗАКРИТТЯ ПРИ КЛІКУ НА МОДАЛКУ
-            className="relative w-full max-w-3xl bg-[#0F0F0F] border border-foxy-accent/40 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] z-[110]"
-          >
+          <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} onClick={(e) => e.stopPropagation()} className="relative w-full max-w-3xl bg-[#0F0F0F] border border-foxy-accent/40 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] z-[110]">
+            
             {/* Header */}
             <div className="px-6 py-5 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
               <div className="flex flex-col">
@@ -210,35 +219,24 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
                   {step === 3 && "Specjalista"}
                 </h3>
                 {step > 1 && (
-                  <button 
-                    onClick={handleBack}
-                    className="text-foxy-accent text-xs uppercase font-bold tracking-widest flex items-center gap-1 mt-1 hover:brightness-125 transition-all w-fit py-1"
-                  >
-                    ← Powrót
-                  </button>
+                  <button onClick={handleBack} className="text-foxy-accent text-xs uppercase font-bold tracking-widest flex items-center gap-1 mt-1 hover:brightness-125 transition-all w-fit py-1">← Powrót</button>
                 )}
               </div>
-              <button 
-                onClick={handleClose} 
-                className="text-white/40 hover:text-foxy-accent transition-colors text-4xl p-2 flex items-center justify-center leading-none"
-                aria-label="Close"
-              >
-                &times;
-              </button>
+              <button onClick={handleClose} className="text-white/40 hover:text-foxy-accent transition-colors text-4xl p-2 flex items-center justify-center leading-none" aria-label="Close">&times;</button>
             </div>
 
             {/* Body */}
             <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar bg-[#0A0A0A] flex-grow">
+              {isLoading && step === 2 && (
+                <div className="text-center py-10 opacity-50 text-white font-bold tracking-widest animate-pulse">
+                  ŁADOWANIE USŁUG...
+                </div>
+              )}
+
               {step === 1 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {categories.map(cat => (
-                    <button 
-                      key={cat.id} 
-                      disabled={cat.disabled}
-                      onClick={() => { setSelectedCat(cat.id); setStep(2); }}
-                      className={`flex flex-col items-center gap-3 p-4 sm:p-6 rounded-2xl border transition-all group
-                        ${cat.disabled ? 'border-white/5 bg-white/5 opacity-20 cursor-not-allowed' : 'border-white/10 bg-[#151515] hover:border-foxy-accent/60 hover:bg-foxy-accent/5'}`}
-                    >
+                    <button key={cat.id} disabled={cat.disabled} onClick={() => { setSelectedCat(cat.id); setStep(2); }} className={`flex flex-col items-center gap-3 p-4 sm:p-6 rounded-2xl border transition-all group ${cat.disabled ? 'border-white/5 bg-white/5 opacity-20 cursor-not-allowed' : 'border-white/10 bg-[#151515] hover:border-foxy-accent/60 hover:bg-foxy-accent/5'}`}>
                       <span className="text-3xl group-hover:scale-110 transition-transform">{cat.icon}</span>
                       <span className="font-bold text-[9px] text-white font-montserrat uppercase tracking-[0.15em] text-center leading-tight">{cat.title}</span>
                     </button>
@@ -246,31 +244,30 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
                 </div>
               )}
 
-              {step === 2 && selectedCat && (
+              {/* ЗМІНЕНО: Рендеримо з servicesFromDB */}
+              {step === 2 && selectedCat && !isLoading && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {servicesDB[selectedCat]?.map(service => {
+                  {servicesFromDB[selectedCat]?.map(service => {
                     const isSelected = selectedServices.some(s => s.id === service.id);
                     return (
-                      <button 
-                        key={service.id} 
-                        onClick={() => toggleService(service)}
-                        className={`p-4 rounded-xl border flex justify-between items-start gap-3 transition-all ${
-                          isSelected ? 'border-foxy-accent bg-foxy-accent/10 shadow-[0_0_15px_rgba(179,162,97,0.1)]' : 'border-white/5 bg-[#151515] hover:border-white/20'
-                        }`}
-                      >
+                      <button key={service.id} onClick={() => toggleService(service)} className={`p-4 rounded-xl border flex justify-between items-start gap-3 transition-all text-left ${isSelected ? 'border-foxy-accent bg-foxy-accent/10 shadow-[0_0_15px_rgba(179,162,97,0.1)]' : 'border-white/5 bg-[#151515] hover:border-white/20'}`}>
                         <div className="flex gap-3">
                           <div className={`w-4 h-4 mt-1 shrink-0 rounded border flex items-center justify-center transition-all ${isSelected ? 'bg-foxy-accent border-foxy-accent' : 'border-white/20'}`}>
                             {isSelected && <svg className="text-black w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={5} d="M5 13l4 4L19 7"/></svg>}
                           </div>
-                          <div className="text-left">
+                          <div>
                             <p className="font-bold text-white text-[13px] leading-snug">{service.name}</p>
                             <p className="text-[9px] text-foxy-accent/60 uppercase font-bold tracking-widest mt-1">{service.durationText}</p>
                           </div>
                         </div>
-                        <span className="font-bold text-foxy-accent text-sm whitespace-nowrap ml-1">{service.price} zł</span>
+                        {/* ЗМІНЕНО: Використовуємо оригінальний текст ціни */}
+                        <span className="font-bold text-foxy-accent text-sm whitespace-nowrap ml-1">{service.priceText}</span>
                       </button>
                     );
                   })}
+                  {(!servicesFromDB[selectedCat] || servicesFromDB[selectedCat].length === 0) && (
+                     <p className="col-span-2 text-center text-white/50 text-sm py-8">Brak usług w tej kategorii.</p>
+                  )}
                 </div>
               )}
 
@@ -279,11 +276,7 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
                   {mastersDB[selectedCat]?.map(masterId => {
                     const master = teamProfiles[masterId];
                     return (
-                      <button 
-                        key={masterId} 
-                        onClick={() => setSelectedMasterId(masterId)}
-                        className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${selectedMasterId === masterId ? 'border-foxy-accent bg-foxy-accent/10' : 'border-white/10 bg-[#151515]'}`}
-                      >
+                      <button key={masterId} onClick={() => setSelectedMasterId(masterId)} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${selectedMasterId === masterId ? 'border-foxy-accent bg-foxy-accent/10' : 'border-white/10 bg-[#151515]'}`}>
                         <img src={master.img} alt={master.name} className="w-14 h-14 rounded-full object-cover border border-foxy-accent/20" />
                         <div className="text-left">
                           <h4 className="font-bold text-white text-sm">{master.name}</h4>
@@ -310,11 +303,7 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
                   </div>
                 </div>
 
-                <button 
-                  disabled={(step === 2 && selectedServices.length === 0) || (step === 3 && !selectedMasterId)}
-                  onClick={step === 2 ? () => setStep(3) : handleFinalBooking}
-                  className="w-full py-4 bg-foxy-accent text-black font-black uppercase tracking-[0.2em] rounded-xl hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-20 shadow-[0_0_20px_rgba(179,162,97,0.2)]"
-                >
+                <button disabled={(step === 2 && selectedServices.length === 0) || (step === 3 && !selectedMasterId)} onClick={step === 2 ? () => setStep(3) : handleFinalBooking} className="w-full py-4 bg-foxy-accent text-black font-black uppercase tracking-[0.2em] rounded-xl hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-20 shadow-[0_0_20px_rgba(179,162,97,0.2)]">
                   {step === 2 ? "Dalej" : "Wybierz termin"}
                 </button>
               </div>

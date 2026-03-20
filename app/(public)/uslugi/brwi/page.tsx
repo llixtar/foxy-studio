@@ -3,31 +3,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase'; // 👈 Наш бро
 
-// --- ДАНІ ПРАЙСУ З ПРИВ'ЯЗКОЮ ДО МОДАЛКИ ---
-const browsLashesPriceData = [
-  {
-    category: "Stylizacja brwi",
-    items: [
-      { name: "Regulacja woskiem/pęsetą", price: "50 zł", catId: 'brwi', srvId: 'b1' },
-      { name: "Laminacja brwi", price: "80 zł", catId: 'brwi', srvId: 'b2' },
-      { name: "Koloryzacja brwi z regulacją i geometrią", price: "90 zł", catId: 'brwi', srvId: 'b3' },
-      { name: "Rozjaśnienie brwi + Koloryzacja + Regulacja", price: "100 zł", catId: 'brwi', srvId: 'b4' },
-      { name: "Laminacja brwi + regulacja + farbka", price: "120 zł", catId: 'brwi', srvId: 'b5' },
-    ]
-  },
-  {
-    category: "Stylizacja rzęs",
-    items: [
-      { name: "Koloryzacja rzęs", price: "50 zł", catId: 'rzesy_lami', srvId: 'rl1' },
-      { name: "Laminacja rzęs z koloryzacją", price: "120 zł", catId: 'rzesy_lami', srvId: 'rl2' },
-      { name: "Laminacja rzęs z koloryzacją + regeneracja botoksem", price: "140 zł", catId: 'rzesy_lami', srvId: 'rl3' },
-    ],
-    promocja: "LAMINACJA BRWI + LAMINACJA RZĘS = 200 zł"
-  }
+// Категорії, які ми хочемо бачити саме на цій сторінці
+const PAGE_CATEGORIES = [
+  "Stylizacja brwi",
+  "Stylizacja rzęs",
+  "Przedłużanie rzęs"
 ];
 
-// --- МАЙСТЕР ---
+// --- МАЙСТЕР (Поки залишаємо так, або пізніше теж в базу) ---
 const master = { 
   id: 'tetiana', 
   name: 'Tetiana', 
@@ -36,7 +21,7 @@ const master = {
   image: '/assets/team/tetiana.JPG' 
 };
 
-// --- ГАЛЕРЕЯ ---
+// --- ГАЛЕРЕЯ (Статична, як і була) ---
 const generateImages = (category: string, folder: string, count: number, prefix: string) => {
   return Array.from({ length: count }).map((_, i) => ({
     id: `${prefix}-${i + 1}`,
@@ -63,13 +48,49 @@ const rowVariants: any = {
 
 export default function BrowsPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  
+  // 👈 НОВІ СТАНИ ДЛЯ ДИНАМІКИ
+  const [priceData, setPriceData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 1. ЗАВАНТАЖЕННЯ ДАНИХ З БАЗИ
+  useEffect(() => {
+    const fetchBrowsData = async () => {
+      const [srvRes, promoRes] = await Promise.all([
+        supabase.from('services').select('*').in('category', PAGE_CATEGORIES).order('id'),
+        supabase.from('promotions').select('*').in('category', PAGE_CATEGORIES)
+      ]);
+
+      const srvData = srvRes.data || [];
+      const promoData = promoRes.data || [];
+
+      // Групуємо дані спеціально для цієї сторінки
+      const grouped = PAGE_CATEGORIES.map(cat => {
+        const items = srvData
+          .filter(s => s.category === cat)
+          .map(s => ({
+            name: s.title,
+            price: s.price,
+            catId: s.cat_id,
+            srvId: s.srv_id
+          }));
+        
+        const promocja = promoData.find(p => p.category === cat)?.text || null;
+        
+        return { category: cat, items, promocja };
+      }).filter(group => group.items.length > 0); // Не показуємо пусті категорії
+
+      setPriceData(grouped);
+      setIsLoading(false);
+    };
+
+    fetchBrowsData();
+  }, []);
 
   const handleBooking = (catId: string, srvId: string) => {
     window.dispatchEvent(new CustomEvent('openModalGlobal'));
     setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('prefillBooking', { 
-        detail: { catId, srvId } 
-      }));
+      window.dispatchEvent(new CustomEvent('prefillBooking', { detail: { catId, srvId } }));
     }, 50);
   };
 
@@ -84,129 +105,83 @@ export default function BrowsPage() {
   };
 
   useEffect(() => {
-    if (lightboxIndex !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    if (lightboxIndex !== null) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'unset';
   }, [lightboxIndex]);
 
   return (
-    <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden">
+    <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden text-foxy-text">
       
       {/* 1. ПРАЙС ТА ІНТРО */}
       <section className="px-4 mb-24 relative z-10">
         <div className="container mx-auto max-w-4xl">
           
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10"
-          >
-            <h1 className="font-playfair text-5xl md:text-6xl font-bold text-foxy-text uppercase tracking-tight">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+            <h1 className="font-playfair text-5xl md:text-6xl font-bold uppercase tracking-tight">
               Brwi & <span className="italic font-normal">Rzęsy</span>
             </h1>
             <div className="w-24 h-1 bg-foxy-accent mx-auto mt-6 rounded-full opacity-50"></div>
           </motion.div>
 
-          {/* СТИЛІЗОВАНИЙ БЛОК ВІД АНЖЕЛИ */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-16"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-16">
             <div className="bg-gradient-to-b from-foxy-accent/10 to-transparent border border-foxy-accent/20 p-8 md:p-10 rounded-[2.5rem] text-center shadow-lg">
-              
-              <p className="font-playfair text-xl md:text-3xl text-foxy-text italic mb-10 leading-relaxed max-w-3xl mx-auto">
+              <p className="font-playfair text-xl md:text-3xl italic mb-10 leading-relaxed max-w-3xl mx-auto">
                 "Stylizacja brwi i rzęs to doskonałe rozwiązanie dla wszystkich, którzy są zmęczeni codziennym makijażem, ale nie chcą efektu „sztuczności”."
               </p>
-              
               <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-8 text-foxy-text/80 font-lato text-sm md:text-base">
-                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
-                  <p className="text-center leading-snug">
-                    Najwyższy poziom usług oraz<br/>
-                    <span className="text-foxy-text font-bold uppercase tracking-wider">pełna sterylność zabiegu</span>
-                  </p>
+                <div className="bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                  <p className="text-center leading-snug">Najwyższy poziom usług oraz<br/><span className="font-bold uppercase tracking-wider">pełna sterylność zabiegu</span></p>
                 </div>
-                
-                <div className="flex flex-col items-center gap-3 bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
-                  <p className="text-center leading-snug">
-                    Kawa на wynos oraz<br/>
-                    <span className="text-foxy-text font-bold uppercase tracking-wider">program lojalnościowy</span>
-                  </p>
+                <div className="bg-[#e6e0d2] px-8 py-5 rounded-2xl border border-black/5 w-full md:w-auto shadow-md">
+                  <p className="text-center leading-snug">Kawa na wynos oraz<br/><span className="font-bold uppercase tracking-wider">program lojalnościowy</span></p>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* ПРАЙС */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            {browsLashesPriceData.map((section, idx) => (
-              <motion.div 
-                key={idx}
-                variants={categoryVariants}
-                initial="hidden"
-                whileInView="show"
-                viewport={{ once: true }}
-                className="flex flex-col bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 rounded-[2rem] shadow-2xl"
-              >
-                <h3 className="font-playfair text-2xl font-bold text-white mb-8 border-b border-foxy-accent/30 pb-2">
-                  {section.category}
-                </h3>
-                <div className="flex flex-col space-y-4">
-                  {section.items.map((item, itemIdx) => (
-                    <motion.div 
-                      key={itemIdx} 
-                      variants={rowVariants} 
-                      onClick={() => handleBooking(item.catId, item.srvId)}
-                      className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors"
-                    >
-                      <span className="text-white/90 font-medium text-sm md:text-base group-hover:text-foxy-accent transition-colors pr-4">{item.name}</span>
-                      <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
-                      <span className="text-white font-bold text-sm md:text-base pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
+          {/* ПРАЙС (ДИНАМІЧНИЙ) */}
+          {isLoading ? (
+            <div className="text-center py-20 opacity-30 font-bold tracking-[0.3em] animate-pulse">ŁADOWANIE CENNIKA...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+              {priceData.map((section, idx) => (
+                <motion.div key={idx} variants={categoryVariants} initial="hidden" whileInView="show" viewport={{ once: true }} className="flex flex-col bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 rounded-[2rem] shadow-2xl">
+                  <h3 className="font-playfair text-2xl font-bold text-white mb-8 border-b border-foxy-accent/30 pb-2">{section.category}</h3>
+                  <div className="flex flex-col space-y-4">
+                    {section.items.map((item: any, itemIdx: number) => (
+                      <motion.div key={itemIdx} variants={rowVariants} onClick={() => handleBooking(item.catId, item.srvId)} className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors">
+                        <span className="text-white/90 font-medium text-sm md:text-base group-hover:text-foxy-accent transition-colors pr-4">{item.name}</span>
+                        <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                        <span className="text-white font-bold text-sm md:text-base pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                  {section.promocja && (
+                    <motion.div variants={rowVariants} className="mt-8 p-4 rounded-xl bg-foxy-accent/10 border border-foxy-accent/30 text-center shadow-sm">
+                      <p className="text-foxy-accent font-bold tracking-widest uppercase text-[10px] mb-1">Combo Promocja</p>
+                      <p className="text-white font-bold text-sm">{section.promocja}</p>
                     </motion.div>
-                  ))}
-                </div>
-
-                {section.promocja && (
-                  <motion.div variants={rowVariants} className="mt-8 p-4 rounded-xl bg-foxy-accent/10 border border-foxy-accent/30 text-center shadow-sm">
-                    <p className="text-foxy-accent font-bold tracking-widest uppercase text-[10px] mb-1">Combo Promocja</p>
-                    <p className="text-white font-bold text-sm">{section.promocja}</p>
-                  </motion.div>
-                )}
-              </motion.div>
-            ))}
-          </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* 2. МАЙСТЕР */}
       <section className="px-4 mb-32 relative z-10">
         <div className="container mx-auto max-w-5xl">
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col md:flex-row items-center gap-10 md:gap-20"
-          >
+          <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
             <div className="w-full md:w-1/2">
               <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
-                <Image 
-                  src={master.image} 
-                  alt={master.name} 
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+                <Image src={master.image} alt={master.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
               </div>
             </div>
             <div className="w-full md:w-1/2 text-center md:text-left">
               <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{master.role}</p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-bold text-foxy-text mb-8">{master.name}</h2>
-              <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">
-                {master.desc}
-              </p>
+              <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-8">{master.name}</h2>
+              <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">{master.desc}</p>
             </div>
           </motion.div>
         </div>
@@ -215,25 +190,14 @@ export default function BrowsPage() {
       {/* 3. ГАЛЕРЕЯ */}
       <section className="px-4 relative z-10">
         <div className="container mx-auto max-w-6xl text-center mb-16">
-          <h2 className="font-playfair text-4xl font-bold text-foxy-text tracking-tight">Portfolio <span className="italic font-normal">Prac</span></h2>
+          <h2 className="font-playfair text-4xl font-bold tracking-tight">Portfolio <span className="italic font-normal">Prac</span></h2>
         </div>
         <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
           {combinedImages.map((img: any, index: number) => {
             const patterns = ["col-span-1 row-span-1", "col-span-1 row-span-2", "col-span-1 row-span-1", "col-span-2 row-span-1"];
             return (
-              <motion.div
-                key={img.id}
-                layout
-                onClick={() => setLightboxIndex(index)}
-                className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}
-              >
-                <Image 
-                  src={img.src} 
-                  alt="Stylizacja" 
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(max-width: 768px) 50vw, 33vw"
-                />
+              <motion.div key={img.id} layout onClick={() => setLightboxIndex(index)} className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}>
+                <Image src={img.src} alt="Stylizacja" fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 33vw" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                    <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
                 </div>
@@ -246,26 +210,14 @@ export default function BrowsPage() {
       {/* 4. LIGHTBOX */}
       <AnimatePresence>
         {lightboxIndex !== null && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
-            onClick={() => setLightboxIndex(null)}
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setLightboxIndex(null)}>
             <button className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" onClick={() => setLightboxIndex(null)}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <motion.div 
-              key={lightboxIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <motion.div key={lightboxIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
               <Image src={combinedImages[lightboxIndex].src} fill className="object-contain rounded-lg shadow-2xl" alt="Zoom" sizes="100vw" priority />
-              <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-              </button>
-              <button onClick={showNext} className="absolute right-0 md:-right-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-              </button>
+              <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button>
+              <button onClick={showNext} className="absolute right-0 md:-right-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></button>
             </motion.div>
           </motion.div>
         )}

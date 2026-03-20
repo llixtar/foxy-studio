@@ -1,71 +1,91 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase'; // Наш бро
 
-// --- ДАНІ З ПРИВ'ЯЗКОЮ ДО БАЗИ МОДАЛКИ ---
-const servicesData = [
+// Конфіг для карток: які категорії з бази ми «запихаємо» в кожну картку
+const CARDS_CONFIG = [
   {
     id: 'tatuaz',
     title: 'Tatuaż artystyczny',
     image: '/assets/tatuaz.jpg',
-    items: [
-      { name: 'Konsultacja', price: 'Darmowa', catId: 'tatuaz', srvId: 't1' },
-      { name: 'Tatuaż minimalistyczny', price: '200 zł', catId: 'tatuaz', srvId: 't2' },
-      { name: 'Tatuaż średni 10-20cm', price: '350 zł+', catId: 'tatuaz', srvId: 't3' },
-    ]
+    dbCategories: ['Tatuaż artystyczny']
   },
   {
     id: 'manicure', 
     title: 'Manicure / Pedicure',
     image: '/assets/paznokcie.jpg',
-    items: [
-      { name: 'Manicure klasyczny', price: '80 zł', catId: 'manicure', srvId: 'm1' },
-      { name: 'Manicure hybrydowy', price: '140 zł', catId: 'manicure', srvId: 'm3' },
-      { name: 'Przedłużanie (krótkie)', price: '170 zł', catId: 'manicure', srvId: 'm7' },
-    ]
+    dbCategories: ['Manicure / Pedicure']
   },
   {
     id: 'brwi_rzesy',
     title: 'Stylizacja brwi i rzęs',
     image: '/assets/brwi.jpg',
-    items: [
-      { name: 'Laminacja brwi', price: '80 zł', catId: 'brwi', srvId: 'b2' },
-      { name: 'Koloryzacja + geometria', price: '90 zł', catId: 'brwi', srvId: 'b3' },
-      { name: 'Laminacja rzęs z koloryzacją', price: "120 zł", catId: 'rzesy_lami', srvId: 'rl2' },
-    ]
+    dbCategories: ['Stylizacja brwi', 'Stylizacja rzęs'] // Об'єднуємо дві категорії в одну картку
   },
   {
     id: 'rzesy_ext',
     title: 'Przedłużanie rzęs',
     image: '/assets/rzesy.jpg',
-    items: [
-      { name: 'Założenie rzęs 1-2D', price: '130 zł', catId: 'rzesy_ext', srvId: 're2' },
-      { name: 'Założenie rzęs 3D', price: '140 zł', catId: 'rzesy_ext', srvId: 're3' },
-      { name: 'Mega Volume (6D+)', price: '160 zł', catId: 'rzesy_ext', srvId: 're5' },
-    ]
+    dbCategories: ['Przedłużanie rzęs']
   }
 ];
 
 export default function Services() {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [servicesData, setServicesData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const { data: dbServices } = await supabase
+        .from('services')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (dbServices) {
+        // Формуємо структуру для карток на основі конфігу
+        const formattedData = CARDS_CONFIG.map(card => {
+          // Фільтруємо послуги, що належать до категорій цієї картки
+          const filteredItems = dbServices
+            .filter(s => card.dbCategories.includes(s.category))
+            .slice(0, 3) // Беремо перші 3 для прев'ю
+            .map(s => ({
+              name: s.title,
+              price: s.price,
+              catId: s.cat_id,
+              srvId: s.srv_id
+            }));
+
+          return {
+            ...card,
+            items: filteredItems
+          };
+        });
+
+        setServicesData(formattedData);
+      }
+      setIsLoading(false);
+    };
+
+    fetchServices();
+  }, []);
 
   const handleToggle = (id: string) => {
     setActiveId(activeId === id ? null : id);
   };
 
-  // МАГІЯ ВИКЛИКУ МОДАЛКИ
   const handleBooking = (catId: string, srvId: string) => {
-    // 1. Відправляємо подію для ВІДКРИТТЯ модалки
     window.dispatchEvent(new CustomEvent('openModalGlobal'));
-    
-    // 2. Відправляємо подію з ДАНИМИ для самої модалки
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('prefillBooking', { 
         detail: { catId, srvId } 
       }));
-    }, 50); // Легка затримка, щоб модалка встигла відрендеритись
+    }, 50);
   };
+
+  if (isLoading) return null; // Або легкий скелетон
 
   return (
     <section className="bg-foxy-bg pt-24 pb-12 px-4 relative z-20">
@@ -115,11 +135,11 @@ export default function Services() {
                       className="absolute top-[100%] left-0 w-full mt-2 overflow-hidden bg-black/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl z-20"
                     >
                       <div className="p-4 space-y-2">
-                        {service.items.map((item, idx) => (
+                        {service.items.map((item: any, idx: number) => (
                           <div 
                             key={idx} 
                             onClick={(e) => {
-                              e.stopPropagation(); // Щоб клік не закривав меню
+                              e.stopPropagation();
                               handleBooking(item.catId, item.srvId);
                             }}
                             className="group/item relative flex justify-between items-baseline gap-4 py-2 cursor-pointer"
