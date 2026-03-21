@@ -3,29 +3,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase'; // 👈 Підключаємо базу
+import { supabase } from '@/lib/supabase';
 
-// Категорія для фільтрації на цій сторінці
+// Категорія для фільтрації послуг
 const PAGE_CATEGORY = "Przedłużanie rzęs";
-
-// --- МАЙСТЕР (ІРИНА) ---
-const master = { 
-  id: 'iryna', 
-  name: 'Iryna', 
-  role: 'Stylistka Rzęs / Mani & Pedi', 
-  desc: 'Prawdziwa „złota rączka” Foxy Studio. Specjalizuje się w przedłużaniu rzęs w każdej technice: od subtelnej klasyki po spektakularne mega volume. Jej prace charakteryzują się niesamowitą precyzją, szybkością i trwałością.', 
-  image: '/assets/team/iryna.JPG' 
-};
-
-// --- ГАЛЕРЕЯ ---
-const generateImages = (category: string, folder: string, count: number, prefix: string) => {
-  return Array.from({ length: count }).map((_, i) => ({
-    id: `${prefix}-${i + 1}`,
-    category,
-    src: `/assets/gallery/${folder}/${i + 1}.webp`
-  }));
-};
-const lashImages = generateImages("Przedłużanie rzęs", "rzesy", 5, "r");
+// Категорія для ГАЛЕРЕЇ (має збігатися з адмінкою)
+const GALLERY_CATEGORY = "Przedłużanie rzęs";
+// Ключове слово для пошуку майстра цієї сторінки в базі
+const MASTER_ROLE_KEYWORD = "rzęsy";
 
 // --- АНІМАЦІЇ ---
 const categoryVariants: any = {
@@ -41,21 +26,28 @@ const rowVariants: any = {
 export default function LashesPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   
-  // 👈 НОВІ СТАНИ ДЛЯ ДИНАМІЧНИХ ДАНИХ
+  // СТАНИ ДЛЯ ДИНАМІЧНИХ ДАНИХ
   const [items, setItems] = useState<any[]>([]);
   const [promo, setPromo] = useState<string | null>(null);
+  const [masters, setMasters] = useState<any[]>([]); 
+  const [galleryImages, setGalleryImages] = useState<any[]>([]); // 👈 Стан для фоток галереї
   const [isLoading, setIsLoading] = useState(true);
 
   // 1. ЗАВАНТАЖЕННЯ ДАНИХ З SUPABASE
   useEffect(() => {
     const fetchData = async () => {
-      const [srvRes, promoRes] = await Promise.all([
+      const [srvRes, promoRes, teamRes, galleryRes] = await Promise.all([
         supabase.from('services').select('*').eq('category', PAGE_CATEGORY).order('id'),
-        supabase.from('promotions').select('text').eq('category', PAGE_CATEGORY).single()
+        supabase.from('promotions').select('text').eq('category', PAGE_CATEGORY).single(),
+        supabase.from('team').select('*').ilike('role', `%${MASTER_ROLE_KEYWORD}%`).order('is_boss', { ascending: false }),
+        // 👈 Тягнемо фотографії саме для цієї категорії
+        supabase.from('gallery').select('*').eq('category', GALLERY_CATEGORY).order('created_at', { ascending: false })
       ]);
 
       if (srvRes.data) setItems(srvRes.data);
       if (promoRes.data) setPromo(promoRes.data.text);
+      if (teamRes.data) setMasters(teamRes.data);
+      if (galleryRes.data) setGalleryImages(galleryRes.data); // 👈 Зберігаємо фотки
       
       setIsLoading(false);
     };
@@ -74,24 +66,30 @@ export default function LashesPage() {
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex + 1) % lashImages.length);
+    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex + 1) % galleryImages.length);
   };
 
   const showPrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex - 1 + lashImages.length) % lashImages.length);
+    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex - 1 + galleryImages.length) % galleryImages.length);
   };
 
   useEffect(() => {
-    if (lightboxIndex !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-  }, [lightboxIndex]);
+    if (lightboxIndex !== null) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'unset';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIndex === null) return;
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') showNext();
+      if (e.key === 'ArrowLeft') showPrev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, galleryImages.length]);
 
   return (
-    <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden text-foxy-text">
+    <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden text-foxy-text font-lato">
       
       {/* 1. ПРАЙС ТА ІНТРО */}
       <section className="px-4 mb-24 relative z-10">
@@ -126,10 +124,10 @@ export default function LashesPage() {
             <motion.div variants={categoryVariants} initial="hidden" animate="show" className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl max-w-3xl mx-auto">
               <div className="flex flex-col space-y-4">
                 {items.map((item, idx) => (
-                  <motion.div key={idx} variants={rowVariants} onClick={() => handleBooking(item.cat_id, item.srv_id)} className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors">
-                    <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors pr-4">{item.title}</span>
-                    <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
-                    <span className="text-white font-bold text-base md:text-lg pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
+                  <motion.div key={idx} variants={rowVariants} onClick={() => handleBooking(item.cat_id, item.srv_id)} className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors gap-2">
+                    <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors leading-tight flex-1">{item.title}</span>
+                    <div className="flex-grow border-b-2 border-dotted border-white/20 mb-1 min-w-[20px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                    <span className="text-white font-bold text-base md:text-lg shrink-0 group-hover:text-foxy-accent transition-colors pl-1">{item.price}</span>
                   </motion.div>
                 ))}
 
@@ -145,53 +143,64 @@ export default function LashesPage() {
         </div>
       </section>
 
-      {/* 2. МАЙСТЕР */}
-      <section className="px-4 mb-32 relative z-10">
-        <div className="container mx-auto max-w-5xl">
-          <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
-            <div className="w-full md:w-1/2">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl">
-                <Image src={master.image} alt={master.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
-              </div>
+      {/* 2. МАЙСТРИ (ДИНАМІЧНІ З БД) */}
+      {!isLoading && masters.length > 0 && (
+        <section className="px-4 mb-32 relative z-10">
+          <div className="container mx-auto max-w-5xl">
+            <div className="flex flex-col gap-20 md:gap-32">
+              {masters.map((m, idx) => (
+                <motion.div key={m.id} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className={`flex flex-col items-center gap-10 md:gap-20 ${idx % 2 !== 0 ? 'md:flex-row-reverse' : 'md:flex-row'}`}>
+                  <div className="w-full md:w-1/2">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
+                      <Image src={m.image_url} alt={m.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+                    </div>
+                  </div>
+                  <div className={`w-full md:w-1/2 text-center ${idx % 2 !== 0 ? 'md:text-right' : 'md:text-left'}`}>
+                    <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{m.role}</p>
+                    <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-8">{m.name}</h2>
+                    <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">{m.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-            <div className="w-full md:w-1/2 text-center md:text-left">
-              <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{master.role}</p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-8">{master.name}</h2>
-              <p className="text-foxy-text/80 leading-relaxed font-lato text-lg">{master.desc}</p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
-      {/* 3. ГАЛЕРЕЯ */}
+      {/* 3. ГАЛЕРЕЯ (ДИНАМІЧНА З БАЗИ) */}
       <section className="px-4 relative z-10">
         <div className="container mx-auto max-w-6xl text-center mb-16">
-          <h2 className="font-playfair text-4xl font-bold">Nasze <span className="italic">Stylizacje</span></h2>
+          <h2 className="font-playfair text-4xl font-bold tracking-tight">Nasze <span className="italic font-normal">Stylizacje</span></h2>
         </div>
-        <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
-          {lashImages.map((img: any, index: number) => {
-            const patterns = ["col-span-1 row-span-1", "col-span-1 row-span-2", "col-span-2 row-span-1"];
-            return (
-              <motion.div key={img.id} layout onClick={() => setLightboxIndex(index)} className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}>
-                <Image src={img.src} alt="Lashes work" fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 33vw" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                   <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+        
+        {galleryImages.length === 0 && !isLoading ? (
+          <p className="text-center text-white/40 mb-20">Brak zdjęć w tej kategorii.</p>
+        ) : (
+          <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
+            {galleryImages.map((img: any, index: number) => {
+              const patterns = ["col-span-1 row-span-1", "col-span-1 row-span-2", "col-span-2 row-span-1"];
+              return (
+                <motion.div key={img.id} layout onClick={() => setLightboxIndex(index)} className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}>
+                  <Image src={img.image_url} alt="Lashes work" fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 33vw" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                     <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* 4. LIGHTBOX */}
       <AnimatePresence>
         {lightboxIndex !== null && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setLightboxIndex(null)}>
-            <button className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" onClick={() => setLightboxIndex(null)}>
+            <button className="absolute top-8 right-8 text-white/70 hover:text-white transition-colors p-2 z-[110]" onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <motion.div key={lightboxIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-              <Image src={lashImages[lightboxIndex].src} fill className="object-contain rounded-lg" alt="Lash Zoom" sizes="100vw" priority />
+              <Image src={galleryImages[lightboxIndex].image_url} fill className="object-contain rounded-lg shadow-2xl" alt="Lash Zoom" sizes="100vw" priority />
               <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button>
               <button onClick={showNext} className="absolute right-0 md:-right-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></button>
             </motion.div>

@@ -3,37 +3,20 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase'; // 👈 Наш бро
+import { supabase } from '@/lib/supabase';
 
-// Категорії, які ми хочемо бачити саме на цій сторінці
+// Категорії для ПРАЙСУ
 const PAGE_CATEGORIES = [
   "Stylizacja brwi",
   "Stylizacja rzęs",
   "Przedłużanie rzęs"
 ];
 
-// --- МАЙСТЕР (Поки залишаємо так, або пізніше теж в базу) ---
-const master = { 
-  id: 'tetiana', 
-  name: 'Tetiana', 
-  role: 'Stylizacja brwi i rzęs', 
-  desc: 'Mistrzyni idealnej geometrii i laminacji. Specjalizuje się w podkreślaniu naturalnego piękna spojrzenia, unikając efektu sztuczności. Jej precyzja i dbałość o detale sprawiają, że każda stylizacja jest perfekcyjnie dopasowana do urody klientki.', 
-  image: '/assets/team/tetiana.JPG' 
-};
+// Категорія для ГАЛЕРЕЇ (має точно збігатися з адмінкою)
+const GALLERY_CATEGORY = "Stylizacja brwi i rzęs";
 
-// --- ГАЛЕРЕЯ (Статична, як і була) ---
-const generateImages = (category: string, folder: string, count: number, prefix: string) => {
-  return Array.from({ length: count }).map((_, i) => ({
-    id: `${prefix}-${i + 1}`,
-    category,
-    src: `/assets/gallery/${folder}/${i + 1}.webp`
-  }));
-};
-
-const combinedImages: any = [
-  ...generateImages("Brwi", "brwi", 4, "b"),
-  ...generateImages("Rzęsy", "rzesy", 5, "r"),
-];
+// Ключове слово для пошуку майстра за ПОСАДОЮ (role)
+const MASTER_ROLE_KEYWORD = "brwi";
 
 // --- АНІМАЦІЇ ---
 const categoryVariants: any = {
@@ -49,22 +32,26 @@ const rowVariants: any = {
 export default function BrowsPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   
-  // 👈 НОВІ СТАНИ ДЛЯ ДИНАМІКИ
+  // СТАНИ ДЛЯ ДИНАМІКИ
   const [priceData, setPriceData] = useState<any[]>([]);
+  const [masterData, setMasterData] = useState<any>(null);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]); // 👈 Стан для галереї
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. ЗАВАНТАЖЕННЯ ДАНИХ З БАЗИ
   useEffect(() => {
     const fetchBrowsData = async () => {
-      const [srvRes, promoRes] = await Promise.all([
+      const [srvRes, promoRes, teamRes, galleryRes] = await Promise.all([
         supabase.from('services').select('*').in('category', PAGE_CATEGORIES).order('id'),
-        supabase.from('promotions').select('*').in('category', PAGE_CATEGORIES)
+        supabase.from('promotions').select('*').in('category', PAGE_CATEGORIES),
+        supabase.from('team').select('*').ilike('role', `%${MASTER_ROLE_KEYWORD}%`).limit(1).single(),
+        // 👈 Тягнемо фотографії саме для категорії брів та вій
+        supabase.from('gallery').select('*').eq('category', GALLERY_CATEGORY).order('created_at', { ascending: false })
       ]);
 
       const srvData = srvRes.data || [];
       const promoData = promoRes.data || [];
 
-      // Групуємо дані спеціально для цієї сторінки
+      // 1. Групуємо прайси
       const grouped = PAGE_CATEGORIES.map(cat => {
         const items = srvData
           .filter(s => s.category === cat)
@@ -76,11 +63,21 @@ export default function BrowsPage() {
           }));
         
         const promocja = promoData.find(p => p.category === cat)?.text || null;
-        
         return { category: cat, items, promocja };
-      }).filter(group => group.items.length > 0); // Не показуємо пусті категорії
+      }).filter(group => group.items.length > 0);
 
       setPriceData(grouped);
+
+      // 2. Зберігаємо дані майстра
+      if (teamRes.data) {
+        setMasterData(teamRes.data);
+      }
+
+      // 3. Зберігаємо фото галереї
+      if (galleryRes.data) {
+        setGalleryImages(galleryRes.data);
+      }
+
       setIsLoading(false);
     };
 
@@ -96,21 +93,30 @@ export default function BrowsPage() {
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex + 1) % combinedImages.length);
+    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex + 1) % galleryImages.length);
   };
 
   const showPrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex - 1 + combinedImages.length) % combinedImages.length);
+    if (lightboxIndex !== null) setLightboxIndex((lightboxIndex - 1 + galleryImages.length) % galleryImages.length);
   };
 
   useEffect(() => {
     if (lightboxIndex !== null) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'unset';
-  }, [lightboxIndex]);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIndex === null) return;
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') showNext();
+      if (e.key === 'ArrowLeft') showPrev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, galleryImages.length]);
 
   return (
-    <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden text-foxy-text">
+    <div className="bg-foxy-bg min-h-screen pt-48 pb-24 relative overflow-x-hidden text-foxy-text font-lato">
       
       {/* 1. ПРАЙС ТА ІНТРО */}
       <section className="px-4 mb-24 relative z-10">
@@ -139,7 +145,6 @@ export default function BrowsPage() {
             </div>
           </motion.div>
 
-          {/* ПРАЙС (ДИНАМІЧНИЙ) */}
           {isLoading ? (
             <div className="text-center py-20 opacity-30 font-bold tracking-[0.3em] animate-pulse">ŁADOWANIE CENNIKA...</div>
           ) : (
@@ -149,10 +154,10 @@ export default function BrowsPage() {
                   <h3 className="font-playfair text-2xl font-bold text-white mb-8 border-b border-foxy-accent/30 pb-2">{section.category}</h3>
                   <div className="flex flex-col space-y-4">
                     {section.items.map((item: any, itemIdx: number) => (
-                      <motion.div key={itemIdx} variants={rowVariants} onClick={() => handleBooking(item.catId, item.srvId)} className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors">
-                        <span className="text-white/90 font-medium text-sm md:text-base group-hover:text-foxy-accent transition-colors pr-4">{item.name}</span>
-                        <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
-                        <span className="text-white font-bold text-sm md:text-base pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
+                      <motion.div key={itemIdx} variants={rowVariants} onClick={() => handleBooking(item.catId, item.srvId)} className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors gap-2">
+                        <span className="text-white/90 font-medium text-sm md:text-base group-hover:text-foxy-accent transition-colors leading-tight flex-1">{item.name}</span>
+                        <div className="flex-grow border-b-2 border-dotted border-white/20 mb-1 min-w-[20px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                        <span className="text-white font-bold text-sm md:text-base shrink-0 group-hover:text-foxy-accent transition-colors pl-1">{item.price}</span>
                       </motion.div>
                     ))}
                   </div>
@@ -169,42 +174,49 @@ export default function BrowsPage() {
         </div>
       </section>
 
-      {/* 2. МАЙСТЕР */}
-      <section className="px-4 mb-32 relative z-10">
-        <div className="container mx-auto max-w-5xl">
-          <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
-            <div className="w-full md:w-1/2">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
-                <Image src={master.image} alt={master.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+      {/* 2. МАЙСТЕР (ДИНАМІЧНИЙ) */}
+      {!isLoading && masterData && (
+        <section className="px-4 mb-32 relative z-10">
+          <div className="container mx-auto max-w-5xl">
+            <motion.div initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
+              <div className="w-full md:w-1/2">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
+                  <Image src={masterData.image_url} alt={masterData.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+                </div>
               </div>
-            </div>
-            <div className="w-full md:w-1/2 text-center md:text-left">
-              <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{master.role}</p>
-              <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-8">{master.name}</h2>
-              <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">{master.desc}</p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+              <div className="w-full md:w-1/2 text-center md:text-left">
+                <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{masterData.role}</p>
+                <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-8">{masterData.name}</h2>
+                <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">{masterData.desc}</p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
-      {/* 3. ГАЛЕРЕЯ */}
+      {/* 3. ГАЛЕРЕЯ (ДИНАМІЧНА) */}
       <section className="px-4 relative z-10">
         <div className="container mx-auto max-w-6xl text-center mb-16">
           <h2 className="font-playfair text-4xl font-bold tracking-tight">Portfolio <span className="italic font-normal">Prac</span></h2>
         </div>
-        <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
-          {combinedImages.map((img: any, index: number) => {
-            const patterns = ["col-span-1 row-span-1", "col-span-1 row-span-2", "col-span-1 row-span-1", "col-span-2 row-span-1"];
-            return (
-              <motion.div key={img.id} layout onClick={() => setLightboxIndex(index)} className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}>
-                <Image src={img.src} alt="Stylizacja" fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 33vw" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                   <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+        
+        {galleryImages.length === 0 && !isLoading ? (
+          <p className="text-center text-white/40 mb-20">Brak zdjęć w tej kategorii.</p>
+        ) : (
+          <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
+            {galleryImages.map((img: any, index: number) => {
+              const patterns = ["col-span-1 row-span-1", "col-span-1 row-span-2", "col-span-1 row-span-1", "col-span-2 row-span-1"];
+              return (
+                <motion.div key={img.id} layout onClick={() => setLightboxIndex(index)} className={`relative group cursor-pointer overflow-hidden rounded-3xl bg-black/5 ${patterns[index % patterns.length]}`}>
+                  <Image src={img.image_url} alt="Stylizacja" fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 33vw" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                     <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* 4. LIGHTBOX */}
@@ -215,7 +227,7 @@ export default function BrowsPage() {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-10 h-10"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <motion.div key={lightboxIndex} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-5xl h-[70vh] md:h-[85vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-              <Image src={combinedImages[lightboxIndex].src} fill className="object-contain rounded-lg shadow-2xl" alt="Zoom" sizes="100vw" priority />
+              <Image src={galleryImages[lightboxIndex].image_url} fill className="object-contain rounded-lg shadow-2xl" alt="Zoom" sizes="100vw" priority />
               <button onClick={showPrev} className="absolute left-0 md:-left-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button>
               <button onClick={showNext} className="absolute right-0 md:-right-20 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></button>
             </motion.div>

@@ -3,27 +3,33 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
-const generateImages = (category: string, folder: string, count: number, prefix: string) => {
-  return Array.from({ length: count }).map((_, i) => ({
-    id: `${prefix}-${i + 1}`,
-    category,
-    src: `/assets/gallery/${folder}/${i + 1}.webp`
-  }));
-};
-
-const galleryImages = [
-  ...generateImages("Manicure/pedicure", "manicure", 19, "m"),
-  ...generateImages("Stylizacja brwi i rzęs", "brwi", 4, "b"),
-  ...generateImages("Przedłużanie rzęs", "rzesy", 5, "r"),
-  ...generateImages("Tatuaż artystyczny", "tatuaz", 17, "t"),
+// Оновлені категорії (Вії об'єднані, назви як на скріні)
+const ALL_CATEGORIES = [
+  "Wszystkie",
+  "Manicure/pedicure",
+  "Stylizacja brwi i rzęs",
+  "Przedłużanie rzęs",
+  "Tatuaż artystyczny"
 ];
-
-const categories = ["Wszystkie", "Manicure/pedicure", "Stylizacja brwi i rzęs", "Przedłużanie rzęs", "Tatuaż artystyczny"];
 
 export default function Gallery() {
   const [activeCategory, setActiveCategory] = useState("Wszystkie");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  
+  const [galleryData, setGalleryData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ЗАВАНТАЖЕННЯ ГАЛЕРЕЇ З БАЗИ
+  useEffect(() => {
+    const fetchGallery = async () => {
+      const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+      if (data) setGalleryData(data);
+      setIsLoading(false);
+    };
+    fetchGallery();
+  }, []);
 
   const patterns = [
     "col-span-1 row-span-2",
@@ -33,8 +39,8 @@ export default function Gallery() {
   ];
 
   const filteredImages = activeCategory === "Wszystkie"
-    ? galleryImages
-    : galleryImages.filter(img => img.category === activeCategory);
+    ? galleryData
+    : galleryData.filter(img => img.category === activeCategory);
 
   const showNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -62,7 +68,7 @@ export default function Gallery() {
   }, [lightboxIndex, filteredImages.length]);
 
   return (
-    <section id="portfolio" className="bg-foxy-bg py-24 px-4">
+    <section id="portfolio" className="bg-foxy-bg py-24 px-4 min-h-screen">
       <div className="container mx-auto max-w-6xl">
 
         <motion.div
@@ -78,8 +84,9 @@ export default function Gallery() {
           <div className="w-24 h-1 bg-foxy-accent mx-auto mt-4 rounded-full opacity-50"></div>
         </motion.div>
 
+        {/* ПОВЕРНУТО ОРИГІНАЛЬНІ КНОПКИ З КРАПОЧКОЮ */}
         <div className="grid grid-cols-2 md:flex md:flex-wrap gap-y-6 gap-x-2 mb-12 justify-center items-center">
-          {categories.map((cat, idx) => (
+          {ALL_CATEGORIES.map((cat, idx) => (
             <button
               key={idx}
               onClick={() => setActiveCategory(cat)}
@@ -101,38 +108,44 @@ export default function Gallery() {
           ))}
         </div>
 
-        <motion.div
-          layout
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[180px] md:auto-rows-[240px] grid-flow-row-dense"
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredImages.map((img: any, index: number) => (
-              <motion.div
-                key={img.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                onClick={() => setLightboxIndex(index)}
-                className={`relative group cursor-pointer overflow-hidden rounded-2xl bg-black/5 ${patterns[index % patterns.length]}`}
-              >
-                <Image
-                  src={img.src}
-                  alt={img.category}
-                  fill
-                  loading="lazy"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                />
-
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        {isLoading ? (
+           <div className="flex justify-center items-center py-20">
+              <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase animate-pulse">Ładowanie portfolio...</p>
+           </div>
+        ) : filteredImages.length === 0 ? (
+           <div className="text-center py-20">
+              <p className="text-foxy-text/40 text-lg">W tej kategorii nie ma jeszcze zdjęć.</p>
+           </div>
+        ) : (
+          <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[180px] md:auto-rows-[240px] grid-flow-row-dense">
+            <AnimatePresence mode="popLayout">
+              {filteredImages.map((img: any, index: number) => (
+                <motion.div
+                  key={img.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3 }}
+                  onClick={() => setLightboxIndex(index)}
+                  className={`relative group cursor-pointer overflow-hidden rounded-2xl bg-black/5 ${patterns[index % patterns.length]}`}
+                >
+                  <Image
+                    src={img.image_url}
+                    alt={img.category}
+                    fill
+                    loading="lazy"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white font-bold tracking-widest uppercase text-[10px]">Powiększ</span>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
       </div>
 
@@ -170,7 +183,7 @@ export default function Gallery() {
               className="relative w-full max-w-4xl h-[70vh] md:h-[85vh] px-4 flex justify-center items-center cursor-grab active:cursor-grabbing"
             >
               <Image
-                src={filteredImages[lightboxIndex].src}
+                src={filteredImages[lightboxIndex].image_url}
                 alt="Zoomed"
                 fill
                 className="object-contain rounded-xl shadow-2xl select-none"
@@ -183,18 +196,12 @@ export default function Gallery() {
               </div>
             </motion.div>
 
-            <button
-              onClick={showPrev}
-              className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4"
-            >
+            <button onClick={showPrev} className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
-            <button
-              onClick={showNext}
-              className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4"
-            >
+            <button onClick={showNext} className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>

@@ -3,30 +3,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase'; // 👈 Наш зв'язок з базою
+import { supabase } from '@/lib/supabase';
 
-// Категорія, за якою фільтруємо дані для цієї сторінки
+// Категорія для фільтрації послуг
 const PAGE_CATEGORY = "Manicure / Pedicure";
+// Ключове слово для пошуку майстрів цієї сторінки
+const MASTER_ROLE_KEYWORD = "Manicure";
 
-// --- МАЙСТРИ (Залишаємо статику, поки не зробимо адмінку для персоналу) ---
-const maniMasters = [
-  { 
-    id: 'anzhela', 
-    name: 'Anzhela', 
-    role: 'Właścicielka / Tatuaż / Manicure', 
-    desc: 'Założycielka Foxy Studio. Perfekcjonistka, która łączy pasję do tatuażu z mistrzostwem w stylizacji paznokci. Jej prace to czysta sztuka, w którą wkłada całą swoją duszę.', 
-    image: '/assets/team/anzhela.webp' 
-  },
-  { 
-    id: 'iryna', 
-    name: 'Iryna', 
-    role: 'Mani & Pedi / Rzęsy', 
-    desc: 'Prawdziwa „złota rączka”. Wykonuje swoją pracę szybko i na najwyższym poziomie! Z nią nigdy nie będzie nudno. Szeroki wybór materiałów, pełna sterylność oraz przyjemna atmosfera – gwarantowane!', 
-    image: '/assets/team/iryna.JPG' 
-  },
-];
-
-// --- ГАЛЕРЕЯ ---
+// --- ГАЛЕРЕЯ (Статична) ---
 const generateImages = (category: string, folder: string, count: number, prefix: string) => {
   return Array.from({ length: count }).map((_, i) => ({
     id: `${prefix}-${i + 1}`,
@@ -50,21 +34,25 @@ const rowVariants: any = {
 export default function ManicurePage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   
-  // 👈 НОВІ СТАНИ ДЛЯ ДИНАМІКИ
+  // СТАНИ ДЛЯ ДИНАМІКИ
   const [items, setItems] = useState<any[]>([]);
   const [promo, setPromo] = useState<string | null>(null);
+  const [masters, setMasters] = useState<any[]>([]); // 👈 Стан для майстрів з БД
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. ЗАВАНТАЖЕННЯ ДАНИХ
+  // ЗАВАНТАЖЕННЯ ДАНИХ
   useEffect(() => {
     const fetchData = async () => {
-      const [srvRes, promoRes] = await Promise.all([
+      const [srvRes, promoRes, teamRes] = await Promise.all([
         supabase.from('services').select('*').eq('category', PAGE_CATEGORY).order('id'),
-        supabase.from('promotions').select('text').eq('category', PAGE_CATEGORY).single()
+        supabase.from('promotions').select('text').eq('category', PAGE_CATEGORY).single(),
+        // Шукаємо всіх, у кого в ролі є "Manicure"
+        supabase.from('team').select('*').ilike('role', `%${MASTER_ROLE_KEYWORD}%`).order('is_boss', { ascending: false })
       ]);
 
       if (srvRes.data) setItems(srvRes.data);
       if (promoRes.data) setPromo(promoRes.data.text);
+      if (teamRes.data) setMasters(teamRes.data);
       
       setIsLoading(false);
     };
@@ -75,9 +63,7 @@ export default function ManicurePage() {
   const handleBooking = (catId: string, srvId: string) => {
     window.dispatchEvent(new CustomEvent('openModalGlobal'));
     setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('prefillBooking', { 
-        detail: { catId, srvId } 
-      }));
+      window.dispatchEvent(new CustomEvent('prefillBooking', { detail: { catId, srvId } }));
     }, 50);
   };
 
@@ -92,22 +78,8 @@ export default function ManicurePage() {
   };
 
   useEffect(() => {
-    if (lightboxIndex !== null) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (lightboxIndex === null) return;
-      if (e.key === 'Escape') setLightboxIndex(null);
-      if (e.key === 'ArrowRight') showNext();
-      if (e.key === 'ArrowLeft') showPrev();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
+    if (lightboxIndex !== null) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'unset';
   }, [lightboxIndex]);
 
   return (
@@ -146,10 +118,10 @@ export default function ManicurePage() {
             <motion.div variants={categoryVariants} initial="hidden" animate="show" className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-[2rem] shadow-2xl max-w-3xl mx-auto">
               <div className="flex flex-col space-y-4">
                 {items.map((item, idx) => (
-                  <motion.div key={idx} variants={rowVariants} onClick={() => handleBooking(item.cat_id, item.srv_id)} className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors">
-                    <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors pr-4">{item.title}</span>
-                    <div className="flex-grow border-b-2 border-dotted border-white/20 relative top-[-4px] group-hover:border-foxy-accent/40 transition-colors"></div>
-                    <span className="text-white font-bold text-base md:text-lg pl-4 group-hover:text-foxy-accent transition-colors">{item.price}</span>
+                  <motion.div key={idx} variants={rowVariants} onClick={() => handleBooking(item.cat_id, item.srv_id)} className="flex justify-between items-baseline group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-foxy-accent/5 transition-colors gap-2">
+                    <span className="text-white/90 font-medium text-base md:text-lg group-hover:text-foxy-accent transition-colors leading-tight flex-1">{item.title}</span>
+                    <div className="flex-grow border-b-2 border-dotted border-white/20 mb-1 min-w-[20px] group-hover:border-foxy-accent/40 transition-colors"></div>
+                    <span className="text-white font-bold text-base md:text-lg shrink-0 group-hover:text-foxy-accent transition-colors pl-1">{item.price}</span>
                   </motion.div>
                 ))}
                 
@@ -165,32 +137,34 @@ export default function ManicurePage() {
         </div>
       </section>
 
-      {/* 2. МАЙСТРИ */}
-      <section className="px-4 mb-32 relative z-10">
-        <div className="container mx-auto max-w-5xl">
-          <div className="flex flex-col gap-20 md:gap-32">
-            {maniMasters.map((master, idx) => (
-              <motion.div key={master.id} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className={`flex flex-col items-center gap-10 md:gap-20 ${idx % 2 !== 0 ? 'md:flex-row-reverse' : 'md:flex-row'}`}>
-                <div className="w-full md:w-1/2">
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl">
-                    <Image src={master.image} alt={master.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={idx === 0} />
+      {/* 2. МАЙСТРИ (ДИНАМІЧНІ З БД) */}
+      {!isLoading && masters.length > 0 && (
+        <section className="px-4 mb-32 relative z-10">
+          <div className="container mx-auto max-w-5xl">
+            <div className="flex flex-col gap-20 md:gap-32">
+              {masters.map((master, idx) => (
+                <motion.div key={master.id} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className={`flex flex-col items-center gap-10 md:gap-20 ${idx % 2 !== 0 ? 'md:flex-row-reverse' : 'md:flex-row'}`}>
+                  <div className="w-full md:w-1/2">
+                    <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/5">
+                      <Image src={master.image_url} alt={master.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" priority={idx === 0} />
+                    </div>
                   </div>
-                </div>
-                <div className={`w-full md:w-1/2 text-center ${idx % 2 !== 0 ? 'md:text-right' : 'md:text-left'}`}>
-                  <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{master.role}</p>
-                  <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-8">{master.name}</h2>
-                  <p className="text-foxy-text/80 leading-relaxed font-lato text-lg">{master.desc}</p>
-                </div>
-              </motion.div>
-            ))}
+                  <div className={`w-full md:w-1/2 text-center ${idx % 2 !== 0 ? 'md:text-right' : 'md:text-left'}`}>
+                    <p className="text-foxy-accent font-bold tracking-[0.3em] uppercase text-[10px] mb-4">{master.role}</p>
+                    <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-8">{master.name}</h2>
+                    <p className="text-foxy-text/80 leading-relaxed font-lato text-lg md:text-xl">{master.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 3. ГАЛЕРЕЯ */}
       <section className="px-4 relative z-10">
         <div className="container mx-auto max-w-6xl text-center mb-16">
-          <h2 className="font-playfair text-4xl font-bold">Portfolio <span className="italic">Paznokci</span></h2>
+          <h2 className="font-playfair text-4xl font-bold tracking-tight">Portfolio <span className="italic font-normal">Paznokci</span></h2>
         </div>
         <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[280px] grid-flow-row-dense">
           {maniImages.map((img: any, index: number) => {
