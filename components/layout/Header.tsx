@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createBrowserClient } from '@supabase/ssr'; // 👈 Додано для бази
 
 const navItems = [
   {
@@ -19,7 +20,7 @@ const navItems = [
   { title: 'Cennik', url: '/#cennik', type: 'link' },
   { title: 'Portfolio', url: '/#portfolio', type: 'link' },
   { title: 'Zespół', url: '/#zespol', type: 'link' },
-  { title: 'Opinie', url: '/#opinie', type: 'link' }, // 👈 НОВИЙ ПУНКТ
+  { title: 'Opinie', url: '/#opinie', type: 'link' },
   { title: 'Kontakt', url: '/#kontakt', type: 'link' },
 ];
 
@@ -29,7 +30,57 @@ export default function Header() {
   const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
 
   const pathname = usePathname();
+  const router = useRouter();
   const isHomePage = pathname === '/';
+
+  // --- ЛОГІКА АВТОРИЗАЦІЇ ---
+  const [supabase] = useState(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ));
+  const [user, setUser] = useState<any>(null);
+  const [firstName, setFirstName] = useState('');
+
+  useEffect(() => {
+    // 1. Отримуємо поточну сесію
+    const getUserProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setUser(session.user);
+        // 2. Якщо є юзер, дістаємо його ім'я з нашої таблиці profiles
+        const { data } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (data) setFirstName(data.first_name);
+      }
+    };
+
+    getUserProfile();
+
+    // 3. Слухаємо зміни (наприклад, коли юзер залогінився)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        const { data } = await supabase.from('profiles').select('first_name').eq('id', session.user.id).single();
+        if (data) setFirstName(data.first_name);
+      } else {
+        setUser(null);
+        setFirstName('');
+      }
+    });
+
+    return () => { authListener.subscription.unsubscribe(); };
+  }, [supabase]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.refresh(); // Оновлюємо сторінку після виходу
+  };
+  // -------------------------
 
   // Блокування скролу при відкритому меню
   useEffect(() => {
@@ -93,39 +144,69 @@ export default function Header() {
               />
             </Link>
 
-            {/* ДЕСКТОПНА НАВІГАЦІЯ */}
-            <nav className={`hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-wider transition-colors duration-300 ${
-              isPastHero ? 'text-foxy-text' : 'text-white'
-            }`}>
-              {navItems.map((item) => (
-                item.type === 'dropdown' ? (
-                  <div key={item.title} className="relative group py-4 cursor-pointer">
-                    <span className="flex items-center gap-1 hover:text-foxy-accent transition-colors">
-                      {item.title}
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 mt-0.5 group-hover:rotate-180 transition-transform duration-300">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                      </svg>
-                    </span>
-                    <div className="absolute top-[100%] left-0 pt-2 hidden group-hover:block w-64">
-                      <div className="flex flex-col bg-foxy-bg backdrop-blur-xl shadow-xl border border-foxy-text/10 rounded-2xl overflow-hidden py-2">
-                        {item.items?.map((subItem) => (
-                          <Link key={subItem.name} href={subItem.url} className="px-5 py-3 text-foxy-text/80 hover:text-foxy-accent hover:bg-black/5 text-xs font-bold tracking-widest transition-colors">
-                            {subItem.name}
-                          </Link>
-                        ))}
+            {/* ДЕСКТОПНА НАВІГАЦІЯ + АВТОРИЗАЦІЯ */}
+            <div className="hidden md:flex items-center gap-10">
+              <nav className={`flex items-center gap-8 text-sm font-bold uppercase tracking-wider transition-colors duration-300 ${
+                isPastHero ? 'text-foxy-text' : 'text-white'
+              }`}>
+                {navItems.map((item) => (
+                  item.type === 'dropdown' ? (
+                    <div key={item.title} className="relative group py-4 cursor-pointer">
+                      <span className="flex items-center gap-1 hover:text-foxy-accent transition-colors">
+                        {item.title}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 mt-0.5 group-hover:rotate-180 transition-transform duration-300">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                      </span>
+                      <div className="absolute top-[100%] left-0 pt-2 hidden group-hover:block w-64">
+                        <div className="flex flex-col bg-foxy-bg backdrop-blur-xl shadow-xl border border-foxy-text/10 rounded-2xl overflow-hidden py-2">
+                          {item.items?.map((subItem) => (
+                            <Link key={subItem.name} href={subItem.url} className="px-5 py-3 text-foxy-text/80 hover:text-foxy-accent hover:bg-black/5 text-xs font-bold tracking-widest transition-colors">
+                              {subItem.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <Link key={item.title} href={item.url ?? "#"} className="relative group py-4">
+                      <span>{item.title}</span>
+                      <span className="absolute bottom-2 left-0 w-0 h-0.5 bg-foxy-accent transition-all duration-300 group-hover:w-full"></span>
+                    </Link>
+                  )
+                ))}
+              </nav>
+
+              {/* БЛОК ПРОФІЛЮ ДЕСКТОП */}
+              <div className="border-l border-white/20 pl-6 flex items-center">
+                {user ? (
+                  <div className="relative group">
+                    <div className={`flex items-center gap-2 cursor-pointer font-bold transition-colors ${isPastHero ? 'text-foxy-text hover:text-foxy-accent' : 'text-white hover:text-foxy-accent'}`}>
+                      <span>Cześć, {firstName || 'Foxy'}!</span>
+                      <span className="text-xl"></span>
+                    </div>
+                    {/* Випадашка профілю */}
+                    <div className="absolute right-0 top-[100%] pt-6 hidden group-hover:block w-40">
+                      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-2 flex flex-col overflow-hidden">
+                        <button onClick={handleLogout} className="text-left px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 transition-colors rounded-xl">
+                          Wyloguj się
+                        </button>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <Link key={item.title} href={item.url ?? "#"} className="relative group py-4">
-                    <span>{item.title}</span>
-                    <span className="absolute bottom-2 left-0 w-0 h-0.5 bg-foxy-accent transition-all duration-300 group-hover:w-full"></span>
+                  <Link href="/login" className={`px-6 py-2.5 rounded-full font-bold uppercase tracking-widest text-xs transition-all ${
+                    isPastHero 
+                      ? 'bg-foxy-accent text-white hover:brightness-110 shadow-lg shadow-foxy-accent/20' 
+                      : 'bg-white text-black hover:bg-foxy-accent hover:text-white shadow-lg shadow-white/10'
+                  }`}>
+                    Zaloguj się
                   </Link>
-                )
-              ))}
-            </nav>
+                )}
+              </div>
+            </div>
 
-            {/* БУРГЕР-КНОПКА */}
+            {/* БУРГЕР-КНОПКА (Мобілка) */}
             <button
               className={`md:hidden p-2 relative z-[101] transition-colors hover:text-foxy-accent ${
                 isPastHero ? 'text-foxy-text' : 'text-white'
@@ -163,7 +244,7 @@ export default function Header() {
             </div>
 
             {/* Навігація мобільного меню */}
-            <nav className="flex-grow flex flex-col items-center justify-center gap-8 text-2xl font-bold uppercase tracking-widest text-foxy-text py-12">
+            <nav className="flex-grow flex flex-col items-center justify-center gap-8 text-2xl font-bold uppercase tracking-widest text-foxy-text py-8">
               {navItems.map((item) => (
                 item.type === 'dropdown' ? (
                   <div key={item.title} className="flex flex-col items-center w-full">
@@ -193,6 +274,25 @@ export default function Header() {
                 )
               ))}
             </nav>
+
+            {/* БЛОК ПРОФІЛЮ МОБІЛКА (Внизу меню) */}
+            <div className="mt-auto mb-10 px-6 flex flex-col gap-4">
+              {user ? (
+                <>
+                  <div className="text-center font-playfair text-2xl font-bold text-foxy-text">
+                    Cześć, <span className="text-foxy-accent">{firstName || 'Foxy'}</span>!
+                  </div>
+                  <button onClick={() => { handleLogout(); closeMenu(); }} className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-red-500 bg-red-50/50 border border-red-100 hover:bg-red-100 transition-colors">
+                    Wyloguj się
+                  </button>
+                </>
+              ) : (
+                <Link href="/login" onClick={closeMenu} className="w-full bg-foxy-accent text-white py-4 text-center rounded-2xl font-bold uppercase tracking-widest shadow-xl shadow-foxy-accent/20">
+                  Zaloguj się
+                </Link>
+              )}
+            </div>
+            
           </motion.div>
         )}
       </AnimatePresence>

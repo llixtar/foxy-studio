@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect, useMemo } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
+import { useRouter } from 'next/navigation';
 
 // Категорії для послуг (Ціни)
 const CATEGORIES = [
@@ -12,7 +13,7 @@ const CATEGORIES = [
   "Tatuaż artystyczny"
 ];
 
-// Категорії спеціально для портфоліо
+// Категорії для портфоліо (як на скріні)
 const GALLERY_CATEGORIES = [
   "Manicure/pedicure",
   "Stylizacja brwi i rzęs",
@@ -21,12 +22,24 @@ const GALLERY_CATEGORIES = [
 ];
 
 export default function AdminPage() {
+  const router = useRouter();
+
+  // Ініціалізуємо сучасний клієнт Supabase для браузера
+  const supabase = useMemo(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    ), []
+  );
+
+  // Стан авторизації
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const ADMIN_PASSWORD = "0000"; 
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Основні дані
   const [activeTab, setActiveTab] = useState<'reviews' | 'prices' | 'team' | 'gallery'>('reviews');
-
   const [reviews, setReviews] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [promotions, setPromotions] = useState<any[]>([]);
@@ -58,6 +71,19 @@ export default function AdminPage() {
   const galleryPerPage = 6; 
   const galleryTotalPages = Math.ceil(gallery.length / galleryPerPage);
 
+  // ПЕРЕВІРКА СЕСІЇ
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        setUser(currentUser);
+        fetchAllData();
+      }
+      setLoading(false);
+    };
+    checkUser();
+  }, [supabase]);
+
   const fetchAllData = async () => {
     const [revRes, srvRes, promoRes, teamRes, galleryRes] = await Promise.all([
       supabase.from('reviews').select('*').order('created_at', { ascending: false }),
@@ -73,15 +99,29 @@ export default function AdminPage() {
     if (galleryRes.data) setGallery(galleryRes.data);
   };
 
-  useEffect(() => {
-    if (isAuthorized) fetchAllData();
-  }, [isAuthorized]);
-
-  const handleLogin = (e: React.FormEvent) => {
+  // ВХІД
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) setIsAuthorized(true);
-    else alert("Невірний пароль!");
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert("Помилка входу: " + error.message);
+      setLoading(false);
+    } else {
+      setUser(data.user);
+      fetchAllData();
+      setLoading(false);
+    }
   };
+
+  // ВИХІД
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.refresh();
+  };
+
+  // --- ОБРОБНИКИ КЕРУВАННЯ ДАНИМИ ---
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,7 +168,7 @@ export default function AdminPage() {
       await supabase.storage.from('team-images').upload(fileName, teamFile);
       const { data: urlData } = supabase.storage.from('team-images').getPublicUrl(fileName);
       await supabase.from('team').insert([{ name: teamName, role: teamRole, desc: teamDesc, image_url: urlData.publicUrl, is_boss: teamIsBoss }]);
-      setStatus('Працівника додано! 🚀');
+      setStatus('Додано! 🚀');
       setTeamName(''); setTeamRole(''); setTeamDesc(''); setTeamIsBoss(false); setTeamFile(null);
       fetchAllData();
     } catch (error: any) { setStatus('Помилка: ' + error.message); } finally { setIsUploading(false); setTimeout(() => setStatus(''), 3000); }
@@ -170,13 +210,18 @@ export default function AdminPage() {
     fetchAllData();
   };
 
-  if (!isAuthorized) {
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-foxy-bg text-foxy-accent font-bold animate-pulse uppercase tracking-widest">Перевірка доступу...</div>;
+
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-foxy-bg p-4 text-black font-lato">
-        <form onSubmit={handleLogin} className="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm border border-gray-100">
-          <h1 className="text-2xl font-bold mb-6 text-center">Foxy Admin 🦊</h1>
-          <input type="password" placeholder="Пароль" className="w-full p-4 border rounded-2xl mb-4 outline-foxy-accent text-center tracking-widest" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button className="w-full bg-foxy-accent text-white py-4 rounded-2xl font-bold hover:brightness-105 transition-all uppercase">Увійти</button>
+        <form onSubmit={handleLogin} className="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm border border-gray-100 animate-in fade-in zoom-in duration-300">
+          <h1 className="text-2xl font-bold mb-6 text-center">Foxy Admin 🛡️</h1>
+          <div className="space-y-4">
+            <input type="email" placeholder="Email" className="w-full p-4 border rounded-2xl outline-foxy-accent" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="password" placeholder="Пароль" className="w-full p-4 border rounded-2xl outline-foxy-accent" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <button type="submit" className="w-full bg-foxy-accent text-white py-4 rounded-2xl font-bold hover:brightness-105 transition-all uppercase shadow-lg shadow-foxy-accent/20">Увійти</button>
+          </div>
         </form>
       </div>
     );
@@ -187,14 +232,19 @@ export default function AdminPage() {
       <div className="max-w-5xl mx-auto animate-in fade-in">
         
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 gap-4">
-           <h1 className="text-2xl font-black text-gray-800 tracking-tight uppercase">Admin Panel</h1>
-           <div className="flex flex-wrap justify-center bg-gray-100 p-1 rounded-2xl w-full md:w-auto gap-1">
-             <button onClick={() => setActiveTab('reviews')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs md:text-sm transition-all ${activeTab === 'reviews' ? 'bg-white shadow-md text-foxy-accent' : 'text-gray-500 hover:text-black'}`}>Відгуки</button>
-             <button onClick={() => setActiveTab('prices')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs md:text-sm transition-all ${activeTab === 'prices' ? 'bg-white shadow-md text-foxy-accent' : 'text-gray-500 hover:text-black'}`}>Ціни</button>
-             <button onClick={() => setActiveTab('team')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs md:text-sm transition-all ${activeTab === 'team' ? 'bg-white shadow-md text-foxy-accent' : 'text-gray-500 hover:text-black'}`}>Команда</button>
-             <button onClick={() => setActiveTab('gallery')} className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs md:text-sm transition-all ${activeTab === 'gallery' ? 'bg-white shadow-md text-foxy-accent' : 'text-gray-500 hover:text-black'}`}>Галерея</button>
+           <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-foxy-accent rounded-xl flex items-center justify-center text-white shadow-lg font-bold">🦊</div>
+             <h1 className="text-2xl font-black text-gray-800 tracking-tight uppercase">Admin Panel</h1>
            </div>
-           <button onClick={() => setIsAuthorized(false)} className="text-xs text-gray-400 font-bold uppercase tracking-widest">Вийти</button>
+           
+           <div className="flex flex-wrap justify-center bg-gray-100 p-1 rounded-2xl w-full md:w-auto gap-1">
+             {['reviews', 'prices', 'team', 'gallery'].map((tab: any) => (
+               <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs md:text-sm transition-all ${activeTab === tab ? 'bg-white shadow-md text-foxy-accent' : 'text-gray-500 hover:text-black'}`}>
+                 {tab === 'reviews' ? 'Відгуки' : tab === 'prices' ? 'Ціни' : tab === 'team' ? 'Команда' : 'Галерея'}
+               </button>
+             ))}
+           </div>
+           <button onClick={handleLogout} className="text-xs text-gray-400 font-bold uppercase tracking-widest hover:text-red-500">Вийти 🚪</button>
         </div>
 
         {activeTab === 'reviews' && (
@@ -322,9 +372,9 @@ export default function AdminPage() {
               </div>
               {galleryTotalPages > 1 && (
                 <div className="flex justify-between items-center mt-6 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                  <button onClick={() => setGalleryPage(p => Math.max(1, p - 1))} disabled={galleryPage === 1} className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-sm font-bold rounded-xl disabled:opacity-30 transition-colors">←</button>
+                  <button onClick={() => setGalleryPage(p => Math.max(1, p - 1))} disabled={galleryPage === 1} className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-sm font-bold rounded-xl disabled:opacity-30">←</button>
                   <span className="text-sm font-bold text-gray-500">{galleryPage} / {galleryTotalPages}</span>
-                  <button onClick={() => setGalleryPage(p => Math.min(galleryTotalPages, p + 1))} disabled={galleryPage === galleryTotalPages} className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-sm font-bold rounded-xl disabled:opacity-30 transition-colors">→</button>
+                  <button onClick={() => setGalleryPage(p => Math.min(galleryTotalPages, p + 1))} disabled={galleryPage === galleryTotalPages} className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-sm font-bold rounded-xl disabled:opacity-30">→</button>
                 </div>
               )}
             </div>
