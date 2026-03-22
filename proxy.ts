@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -38,14 +38,24 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // 1. Отримуємо юзера
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Захищаємо адмінку: якщо не залогінений і це сторінка /admin (але не сторінка входу, якщо ми її винесемо)
-  // Поки що логіка проста: Middleware просто прокидає сесію, а сторінка сама вирішує що показувати
+  // 2. РЕАЛЬНИЙ ЗАХИСТ: 
+  // Якщо юзера немає і він намагається зайти в адмінку (крім сторінки логіна)
+  const isLoginPage = request.nextUrl.pathname === '/admin/login'
   
+  if (!user && !isLoginPage) {
+    // Відправляємо на логін
+    const url = request.nextUrl.clone()
+    url.pathname = '/admin/login'
+    return NextResponse.redirect(url)
+  }
+
   return response
 }
 
 export const config = {
+  // Працює для всіх шляхів в адмінці
   matcher: ['/admin/:path*'],
 }

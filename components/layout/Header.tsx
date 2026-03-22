@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createBrowserClient } from '@supabase/ssr'; // 👈 Додано для бази
+import { createBrowserClient } from '@supabase/ssr';
 
 const navItems = [
   {
@@ -40,36 +40,42 @@ export default function Header() {
   ));
   const [user, setUser] = useState<any>(null);
   const [firstName, setFirstName] = useState('');
+  const [role, setRole] = useState('client'); // 👈 Додано стейт для ролі
 
   useEffect(() => {
-    // 1. Отримуємо поточну сесію
     const getUserProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
         setUser(session.user);
-        // 2. Якщо є юзер, дістаємо його ім'я з нашої таблиці profiles
+        // Дістаємо і ім'я, і роль
         const { data } = await supabase
           .from('profiles')
-          .select('first_name')
+          .select('first_name, role')
           .eq('id', session.user.id)
           .single();
           
-        if (data) setFirstName(data.first_name);
+        if (data) {
+          setFirstName(data.first_name);
+          setRole(data.role || 'client');
+        }
       }
     };
 
     getUserProfile();
 
-    // 3. Слухаємо зміни (наприклад, коли юзер залогінився)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
-        const { data } = await supabase.from('profiles').select('first_name').eq('id', session.user.id).single();
-        if (data) setFirstName(data.first_name);
+        const { data } = await supabase.from('profiles').select('first_name, role').eq('id', session.user.id).single();
+        if (data) {
+          setFirstName(data.first_name);
+          setRole(data.role || 'client');
+        }
       } else {
         setUser(null);
         setFirstName('');
+        setRole('client');
       }
     });
 
@@ -78,11 +84,17 @@ export default function Header() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.refresh(); // Оновлюємо сторінку після виходу
+    router.refresh();
+  };
+
+  // 👈 Функція визначення правильного посилання
+  const getDashboardUrl = () => {
+    if (role === 'admin') return '/admin';
+    if (role === 'master') return '/master';
+    return '/account';
   };
   // -------------------------
 
-  // Блокування скролу при відкритому меню
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -92,7 +104,6 @@ export default function Header() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isMenuOpen]);
 
-  // Логіка зміни вигляду хедера при скролі
   useEffect(() => {
     if (!isHomePage) {
       setIsPastHero(true);
@@ -124,7 +135,6 @@ export default function Header() {
 
   return (
     <>
-      {/* 1. ОСНОВНИЙ ХЕДЕР */}
       <header
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
           isPastHero
@@ -144,7 +154,6 @@ export default function Header() {
               />
             </Link>
 
-            {/* ДЕСКТОПНА НАВІГАЦІЯ + АВТОРИЗАЦІЯ */}
             <div className="hidden md:flex items-center gap-10">
               <nav className={`flex items-center gap-8 text-sm font-bold uppercase tracking-wider transition-colors duration-300 ${
                 isPastHero ? 'text-foxy-text' : 'text-white'
@@ -181,11 +190,10 @@ export default function Header() {
               <div className="border-l border-white/20 pl-6 flex items-center">
                 {user ? (
                   <div className="relative group">
-                    <div className={`flex items-center gap-2 cursor-pointer font-bold transition-colors ${isPastHero ? 'text-foxy-text hover:text-foxy-accent' : 'text-white hover:text-foxy-accent'}`}>
+                    {/* 👈 Огорнув у Link з getDashboardUrl */}
+                    <Link href={getDashboardUrl()} className={`flex items-center gap-2 cursor-pointer font-bold transition-colors ${isPastHero ? 'text-foxy-text hover:text-foxy-accent' : 'text-white hover:text-foxy-accent'}`}>
                       <span>Cześć, {firstName || 'Foxy'}!</span>
-                      <span className="text-xl"></span>
-                    </div>
-                    {/* Випадашка профілю */}
+                    </Link>
                     <div className="absolute right-0 top-[100%] pt-6 hidden group-hover:block w-40">
                       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-2 flex flex-col overflow-hidden">
                         <button onClick={handleLogout} className="text-left px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 transition-colors rounded-xl">
@@ -206,7 +214,6 @@ export default function Header() {
               </div>
             </div>
 
-            {/* БУРГЕР-КНОПКА (Мобілка) */}
             <button
               className={`md:hidden p-2 relative z-[101] transition-colors hover:text-foxy-accent ${
                 isPastHero ? 'text-foxy-text' : 'text-white'
@@ -221,7 +228,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* 2. МОБІЛЬНЕ МЕНЮ */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -231,7 +237,6 @@ export default function Header() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-[120] flex flex-col bg-foxy-bg backdrop-blur-3xl md:hidden overflow-y-auto"
           >
-            {/* Header меню */}
             <div className="flex h-24 items-center justify-between px-6 border-b border-foxy-text/5 shrink-0">
               <Link href="/" onClick={closeMenu}>
                 <img src="/assets/FOXY.svg" alt="Foxy Studio Logo" className="h-16 w-auto" />
@@ -243,7 +248,6 @@ export default function Header() {
               </button>
             </div>
 
-            {/* Навігація мобільного меню */}
             <nav className="flex-grow flex flex-col items-center justify-center gap-8 text-2xl font-bold uppercase tracking-widest text-foxy-text py-8">
               {navItems.map((item) => (
                 item.type === 'dropdown' ? (
@@ -275,14 +279,15 @@ export default function Header() {
               ))}
             </nav>
 
-            {/* БЛОК ПРОФІЛЮ МОБІЛКА (Внизу меню) */}
+            {/* БЛОК ПРОФІЛЮ МОБІЛКА */}
             <div className="mt-auto mb-10 px-6 flex flex-col gap-4">
               {user ? (
                 <>
-                  <div className="text-center font-playfair text-2xl font-bold text-foxy-text">
+                  {/* 👈 Огорнув у Link з getDashboardUrl */}
+                  <Link href={getDashboardUrl()} onClick={closeMenu} className="text-center font-playfair text-2xl font-bold text-foxy-text hover:text-foxy-accent transition-colors">
                     Cześć, <span className="text-foxy-accent">{firstName || 'Foxy'}</span>!
-                  </div>
-                  <button onClick={() => { handleLogout(); closeMenu(); }} className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-red-500 bg-red-50/50 border border-red-100 hover:bg-red-100 transition-colors">
+                  </Link>
+                  <button onClick={() => { handleLogout(); closeMenu(); }} className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-red-500 bg-red-50/50 border border-red-100 hover:bg-red-100 transition-colors mt-2">
                     Wyloguj się
                   </button>
                 </>

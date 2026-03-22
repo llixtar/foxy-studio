@@ -76,8 +76,6 @@ const parsePrice = (priceStr: string): number => {
 };
 
 export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  
-
   const [step, setStep] = useState(1);
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<any[]>([]);
@@ -89,6 +87,7 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
 
   const [userProfile, setUserProfile] = useState<{name: string, email: string, phone: string} | null>(null);
 
+  // 1. Завантаження послуг та команди
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -119,10 +118,13 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
       setIsLoading(false);
     };
     fetchData();
-  }, [supabase]);
+  }, []); // Пустий масив залежностей для синглтона
 
+  // 2. Отримання профілю юзера (лише коли модалка відкрита)
   useEffect(() => {
     const fetchUserProfile = async () => {
+      if (!isOpen) return;
+      
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
@@ -145,8 +147,8 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
         setUserProfile(null);
       }
     };
-    if (isOpen) fetchUserProfile();
-  }, [isOpen, supabase]);
+    fetchUserProfile();
+  }, [isOpen]);
 
   const handleClose = () => {
     document.body.style.overflow = 'unset';
@@ -181,7 +183,9 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
 
   useEffect(() => {
     const handleGlobalMessage = (event: MessageEvent) => {
-      const isBookingSuccess = event.data?.type === "bookingSuccessful" || event.data?.type === "bookingConfirmed" || (event.data?.origin === "Cal" && event.data?.action === "bookingSuccessful");
+      const isBookingSuccess = event.data?.type === "bookingSuccessful" || 
+                               event.data?.type === "bookingConfirmed" || 
+                               (event.data?.origin === "Cal" && event.data?.action === "bookingSuccessful");
       if (isBookingSuccess) {
         setTimeout(() => { handleClose(); window.location.reload(); }, 2000); 
       }
@@ -201,23 +205,19 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
 
-  // --- ФІНАЛЬНЕ БРОНЮВАННЯ (Динамічне та універсальне) ---
   const handleFinalBooking = async () => {
     const cal = await getCalApi({"namespace":"booking"});
-    
-    // Беремо майстра з бази
     const master = teamFromDB.find(m => m.id === selectedMasterId);
+    
     if (!master || !master.cal_slug) {
       alert("Profil tego specjalisty nie został jeszcze w pełni skonfigurowany.");
       return;
     }
 
-    // Визначаємо івент на основі тривалості (1h, 2h або 3h)
     let eventSlug = "1h";
     if (totalDuration > 120) eventSlug = "3h";
     else if (totalDuration > 60) eventSlug = "2h";
 
-    // Налаштування інтерфейсу Cal
     cal("ui", {
       theme: "dark",
       layout: "month_view",
@@ -225,7 +225,6 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
       locale: "pl"
     });
 
-    // Формуємо параметри для автозаповнення та локалізації
     const params = new URLSearchParams();
     params.append("name", userProfile?.name || '');
     params.append("email", userProfile?.email || '');
@@ -233,7 +232,6 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean, onC
     params.append("smsReminderNumber", userProfile?.phone || '');
     params.append("ui.locale", "pl");
     
-    // Формуємо фінальне посилання: foxy-worker-X/1h?...
     const finalCalLink = `${master.cal_slug}/${eventSlug}?${params.toString()}`;
 
     cal("modal", {
